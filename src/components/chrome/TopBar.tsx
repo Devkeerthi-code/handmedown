@@ -36,19 +36,17 @@ function platformNav(me: Me | null, unread: number) {
   ];
   if (me?.collegeSlug) items.push({ href: `/c/${me.collegeSlug}`, label: "My college", icon: "verified" });
   if (me?.isAdmin) items.push({ href: "/admin", label: "Platform admin", icon: "shield" });
-  const tabs: NavItem[] = [
-    { href: "/", label: "Colleges", icon: "grid" },
-    me?.collegeSlug
-      ? { href: `/c/${me.collegeSlug}`, label: "My college", icon: "verified" }
-      : { href: "/start", label: "Add college", icon: "plus" },
-    me?.collegeSlug
-      ? { href: `/c/${me.collegeSlug}/sell`, label: "Sell", icon: "plus", fab: true }
-      : { href: "/start", label: "Start", icon: "plus", fab: true },
-    me?.collegeSlug
-      ? { href: `/c/${me.collegeSlug}/chats`, label: "Chats", icon: "chat", badge: unread }
-      : { href: "/account", label: "Join", icon: "lock" },
-    { href: me ? "/account" : "/login", label: me ? "You" : "Sign in", icon: "user" },
-  ];
+  const you: NavItem = { href: me ? "/account" : "/login", label: me ? "You" : "Sign in", icon: "user" };
+  // Without a college there are only three distinct places to go; repeating them would just add noise.
+  const tabs: NavItem[] = me?.collegeSlug
+    ? [
+        { href: "/", label: "Colleges", icon: "grid" },
+        { href: `/c/${me.collegeSlug}`, label: "My college", icon: "verified" },
+        { href: `/c/${me.collegeSlug}/sell`, label: "Sell", icon: "plus", fab: true },
+        { href: `/c/${me.collegeSlug}/chats`, label: "Chats", icon: "chat", badge: unread },
+        you,
+      ]
+    : [{ href: "/", label: "Colleges", icon: "grid" }, { href: "/start", label: "Add college", icon: "plus", fab: true }, you];
   return { items, tabs, chatHref: me?.collegeSlug ? `/c/${me.collegeSlug}/chats` : null };
 }
 
