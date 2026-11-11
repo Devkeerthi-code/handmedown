@@ -9,7 +9,12 @@ import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 
-export type TestUser = { id: string; email: string };
+export type TestUser = { id: string; email: string; collegeId: string | null };
+
+/** Two test colleges, created inside every (rolled-back) test transaction. */
+export const COLLEGE_A = "a0000000-0000-4000-8000-0000000000aa";
+export const COLLEGE_B = "b0000000-0000-4000-8000-0000000000bb";
+const DOMAIN = { a: "test.edu.in", b: "other-test.ac.in" } as const;
 
 let client: Client;
 
@@ -23,7 +28,16 @@ export function withTestDatabase() {
   afterAll(async () => client?.end());
   beforeEach(async () => {
     await client.query("BEGIN");
-    await client.query("INSERT INTO app.allowed_domains (domain) VALUES ('test.edu.in') ON CONFLICT DO NOTHING");
+    await client.query(
+      `INSERT INTO app.colleges (id, name, short_name, slug, accent, pickup_spots)
+       VALUES ($1, 'Test College A', 'TCA', 'test-college-a', '#1F7A8C', ARRAY['Central Library', 'Main Gate']),
+              ($2, 'Test College B', 'TCB', 'test-college-b', '#8C1D40', ARRAY['Central Library', 'North Gate'])`,
+      [COLLEGE_A, COLLEGE_B],
+    );
+    await client.query(
+      "INSERT INTO app.college_domains (domain, college_id, status) VALUES ($1, $2, 'active'), ($3, $4, 'active')",
+      [DOMAIN.a, COLLEGE_A, DOMAIN.b, COLLEGE_B],
+    );
   });
   afterEach(async () => {
     await client.query("ROLLBACK");
@@ -55,18 +69,35 @@ export async function isolateCatalogue() {
 }
 
 /** Creates an Auth user (which fires the profile trigger). College-domain users come out verified. */
-export async function createUser(opts: { college?: boolean; admin?: boolean; name?: string } = {}): Promise<TestUser> {
+type UserOpts = {
+  /** "a" (default) or "b" = member of that test college; false = personal email, member of nothing. */
+  college?: "a" | "b" | false;
+  admin?: boolean;
+  role?: "admin" | "moderator";
+  name?: string;
+  confirmed?: boolean;
+  domain?: string;
+};
+
+export async function createUser(opts: UserOpts = {}): Promise<TestUser> {
   const id = randomUUID();
-  const email = `${id.slice(0, 8)}@${opts.college === false ? "gmail.com" : "test.edu.in"}`;
+  const key = opts.college === undefined ? "a" : opts.college;
+  const domain = opts.domain ?? (key === false ? "gmail.com" : DOMAIN[key]);
+  const email = `${id.slice(0, 8)}@${domain}`;
   await sql(
     `INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
                              raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-     VALUES ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $2, '', now(),
+     VALUES ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $2, '',
+             CASE WHEN $4 THEN now() END,
              '{}'::jsonb, jsonb_build_object('display_name', $3::text), now(), now())`,
-    [id, email, opts.name ?? "Test Student"],
+    [id, email, opts.name ?? "Test Student", opts.confirmed !== false],
   );
   if (opts.admin) await sql("UPDATE app.profiles SET is_admin = true WHERE id = $1", [id]);
-  return { id, email };
+  const [p] = await sql<{ college_id: string | null }>("SELECT college_id FROM app.profiles WHERE id = $1", [id]);
+  if (opts.role && p.college_id) {
+    await sql("INSERT INTO app.college_roles (college_id, user_id, role) VALUES ($1, $2, $3::app.\"CollegeRole\")", [p.college_id, id, opts.role]);
+  }
+  return { id, email, collegeId: p.college_id };
 }
 
 /** Act as a signed-in user (or anon) for the following statements. */
@@ -83,6 +114,7 @@ export async function asOwner() {
 }
 
 type ListingOpts = {
+  collegeId?: string;
   title?: string;
   category?: string;
   priceType?: "fixed" | "free" | "exchange";
@@ -99,9 +131,9 @@ export async function createListing(seller: TestUser, o: ListingOpts = {}) {
   const priceType = o.priceType ?? "fixed";
   const [row] = await sql<{ id: string }>(
     `INSERT INTO app.listings (seller_id, title, description, category, condition, price_type, price,
-                               pickup_spot, status, isbn, is_hidden, created_at, updated_at)
+                               pickup_spot, status, isbn, is_hidden, created_at, updated_at, college_id)
      VALUES ($1, $2, $3, $4::app."Category", 'good', $5::app."PriceType", $6, 'Central Library',
-             $7::app."ListingStatus", $8, $9, coalesce($10::timestamptz, now()), now())
+             $7::app."ListingStatus", $8, $9, coalesce($10::timestamptz, now()), now(), $11)
      RETURNING id`,
     [
       seller.id,
@@ -114,6 +146,7 @@ export async function createListing(seller: TestUser, o: ListingOpts = {}) {
       o.isbn ?? null,
       o.hidden ?? false,
       o.createdAt ?? null,
+      o.collegeId ?? seller.collegeId ?? COLLEGE_A,
     ],
   );
   return row.id;
@@ -121,7 +154,8 @@ export async function createListing(seller: TestUser, o: ListingOpts = {}) {
 
 export async function createConversation(listingId: string, buyer: TestUser, seller: TestUser) {
   const [row] = await sql<{ id: string }>(
-    "INSERT INTO app.conversations (listing_id, buyer_id, seller_id) VALUES ($1, $2, $3) RETURNING id",
+    `INSERT INTO app.conversations (listing_id, buyer_id, seller_id, college_id)
+     SELECT $1, $2, $3, l.college_id FROM app.listings l WHERE l.id = $1 RETURNING id`,
     [listingId, buyer.id, seller.id],
   );
   return row.id;

@@ -3,7 +3,7 @@ import { encodeCursor, decodeCursor } from "@/lib/cursor";
 import { buildCountQuery, buildSearchQuery } from "@/lib/listings/search-sql";
 import { parseSearchFilters } from "@/lib/validation";
 import { beforeEach } from "vitest";
-import { as, createListing, createUser, isolateCatalogue, sql, withTestDatabase } from "./helpers";
+import { COLLEGE_A, as, createListing, createUser, isolateCatalogue, sql, withTestDatabase } from "./helpers";
 
 withTestDatabase();
 beforeEach(isolateCatalogue);
@@ -11,7 +11,7 @@ beforeEach(isolateCatalogue);
 type Row = { id: string; title: string; sort_value: string };
 
 async function search(params: Record<string, string>, viewerId: string | null = null, cursor: string | null = null, limit = 12) {
-  const q = buildSearchQuery(parseSearchFilters(params), decodeCursor(cursor), viewerId, limit);
+  const q = buildSearchQuery(parseSearchFilters(params), decodeCursor(cursor), viewerId, COLLEGE_A, limit);
   return sql<Row>(q.text, q.values as unknown[]);
 }
 
@@ -82,7 +82,7 @@ describe("search and filters", () => {
   it("count matches the filtered results", async () => {
     await seedCatalogue();
     await as(null);
-    const q = buildCountQuery(parseSearchFilters({ category: "cycles" }), null);
+    const q = buildCountQuery(parseSearchFilters({ category: "cycles" }), null, COLLEGE_A);
     const [row] = await sql<{ n: number }>(q.text, q.values as unknown[]);
     expect(row.n).toBe(2);
   });

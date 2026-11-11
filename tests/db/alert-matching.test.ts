@@ -8,9 +8,9 @@ type AlertOpts = { query?: string; category?: string; maxPrice?: number; freeOnl
 
 async function alert(user: TestUser, o: AlertOpts) {
   const [row] = await sql<{ id: string }>(
-    `INSERT INTO app.wishlist_alerts (user_id, query, category, max_price, free_only, active)
-     VALUES ($1, $2, $3::app."Category", $4, $5, $6) RETURNING id`,
-    [user.id, o.query ?? null, o.category ?? null, o.maxPrice ?? null, o.freeOnly ?? false, o.active ?? true],
+    `INSERT INTO app.wishlist_alerts (user_id, college_id, query, category, max_price, free_only, active)
+     VALUES ($1, $2, $3, $4::app."Category", $5, $6, $7) RETURNING id`,
+    [user.id, user.collegeId, o.query ?? null, o.category ?? null, o.maxPrice ?? null, o.freeOnly ?? false, o.active ?? true],
   );
   return row.id;
 }

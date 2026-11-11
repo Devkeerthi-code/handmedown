@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { as, asOwner, attempt, createListing, createUser, sql, withTestDatabase } from "./helpers";
+import { COLLEGE_A, as, asOwner, attempt, createListing, createUser, sql, withTestDatabase } from "./helpers";
 
 withTestDatabase();
 
-const insertListing = (sellerId: string) =>
+const insertListing = (sellerId: string, collegeId: string = COLLEGE_A) =>
   attempt(
-    `INSERT INTO app.listings (seller_id, title, category, condition, price_type, price, pickup_spot)
-     VALUES ($1, 'Casio calculator', 'electronics', 'good', 'fixed', 600, 'Central Library') RETURNING id`,
-    [sellerId],
+    `INSERT INTO app.listings (seller_id, college_id, title, category, condition, price_type, price, pickup_spot)
+     VALUES ($1, $2, 'Casio calculator', 'electronics', 'good', 'fixed', 600, 'Central Library') RETURNING id`,
+    [sellerId, collegeId],
   );
 
 describe("who can post", () => {
@@ -53,9 +53,9 @@ describe("who can post", () => {
     const me = await createUser();
     await as(me);
     const r = await attempt(
-      `INSERT INTO app.listings (seller_id, title, category, condition, price_type, price, pickup_spot, is_demo)
-       VALUES ($1, 'Fake demo', 'other', 'good', 'free', NULL, 'Main Gate', true)`,
-      [me.id],
+      `INSERT INTO app.listings (seller_id, college_id, title, category, condition, price_type, price, pickup_spot, is_demo)
+       VALUES ($1, $2, 'Fake demo', 'other', 'good', 'free', NULL, 'Main Gate', true)`,
+      [me.id, COLLEGE_A],
     );
     expect(r.ok).toBe(false);
   });
@@ -117,9 +117,10 @@ describe("photos follow their listing", () => {
     const owner = await createUser();
     const other = await createUser();
     const id = await createListing(owner);
-    const photo = (uid: string) => `${uid}/${crypto.randomUUID()}.webp`;
+    const photo = (uid: string) => `${COLLEGE_A}/${uid}/${crypto.randomUUID()}.webp`;
     const insert = (path: string) =>
       attempt("INSERT INTO app.listing_photos (listing_id, storage_path, position, width, height) VALUES ($1, $2, 0, 800, 600)", [id, path]);
+    // Photos now live under <college>/<user>/.
 
     await as(other);
     expect((await insert(photo(other.id))).ok).toBe(false);
@@ -134,7 +135,7 @@ it("a listing allows at most 5 photos (positions 0-4)", async () => {
   const id = await createListing(owner);
   const r = await attempt(
     "INSERT INTO app.listing_photos (listing_id, storage_path, position, width, height) VALUES ($1, $2, 5, 10, 10)",
-    [id, `${owner.id}/${crypto.randomUUID()}.webp`],
+    [id, `${COLLEGE_A}/${owner.id}/${crypto.randomUUID()}.webp`],
   );
   expect(r.ok).toBe(false);
 });

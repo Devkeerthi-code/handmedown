@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { as, asOwner, attempt, createListing, createUser, sql, withTestDatabase } from "./helpers";
+import { COLLEGE_A, as, asOwner, attempt, createListing, createUser, sql, withTestDatabase } from "./helpers";
 
 withTestDatabase();
 
@@ -39,7 +39,7 @@ describe("reports", () => {
     const reporter = await createUser();
     const id = await createListing(seller);
     await as(reporter);
-    expect((await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason) VALUES ($1, $2, 'scam')", [reporter.id, id])).ok).toBe(true);
+    expect((await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason, college_id) VALUES ($1, $2, 'scam', 'a0000000-0000-4000-8000-0000000000aa')", [reporter.id, id])).ok).toBe(true);
     expect(await sql("SELECT id FROM app.listings WHERE id = $1", [id])).toHaveLength(0);
     await asOwner();
     const [row] = await sql<{ is_hidden: boolean }>("SELECT is_hidden FROM app.listings WHERE id = $1", [id]);
@@ -51,8 +51,8 @@ describe("reports", () => {
     const reporter = await createUser();
     const id = await createListing(seller);
     await as(reporter);
-    await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason) VALUES ($1, $2, 'spam')", [reporter.id, id]);
-    expect((await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason) VALUES ($1, $2, 'spam')", [reporter.id, id])).ok).toBe(false);
+    await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason, college_id) VALUES ($1, $2, 'spam', 'a0000000-0000-4000-8000-0000000000aa')", [reporter.id, id]);
+    expect((await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason, college_id) VALUES ($1, $2, 'spam', 'a0000000-0000-4000-8000-0000000000aa')", [reporter.id, id])).ok).toBe(false);
   });
 
   it("students see only their own reports; admins see all and resolve them", async () => {
@@ -61,7 +61,7 @@ describe("reports", () => {
     const b = await createUser();
     const admin = await createUser({ admin: true });
     const id = await createListing(seller);
-    await sql("INSERT INTO app.reports (reporter_id, listing_id, reason) VALUES ($1, $2, 'misleading')", [a.id, id]);
+    await sql("INSERT INTO app.reports (reporter_id, listing_id, reason, college_id) VALUES ($1, $2, 'misleading', 'a0000000-0000-4000-8000-0000000000aa')", [a.id, id]);
     await as(b);
     expect(await sql("SELECT id FROM app.reports")).toHaveLength(0);
     expect((await attempt("UPDATE app.reports SET status = 'dismissed'")).rowCount).toBe(0);
@@ -75,7 +75,7 @@ describe("reports", () => {
     const reporter = await createUser();
     const id = await createListing(seller);
     await as(reporter);
-    const r = await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason, status) VALUES ($1, $2, 'scam', 'dismissed')", [reporter.id, id]);
+    const r = await attempt("INSERT INTO app.reports (reporter_id, listing_id, reason, status, college_id) VALUES ($1, $2, 'scam', 'dismissed', 'a0000000-0000-4000-8000-0000000000aa')", [reporter.id, id]);
     expect(r.ok).toBe(false);
   });
 });
@@ -110,25 +110,24 @@ describe("profiles", () => {
 });
 
 describe("private tables", () => {
-  it("usage events and allowed domains are invisible to every client role", async () => {
+  it("usage events are invisible to every client role, and nobody can add a domain to a college they don't run", async () => {
     const me = await createUser();
     for (const who of [me, null]) {
       await as(who);
       expect((await attempt("SELECT * FROM app.usage_events")).ok).toBe(false);
-      expect((await attempt("SELECT * FROM app.allowed_domains")).ok).toBe(false);
-      expect((await attempt("INSERT INTO app.allowed_domains (domain) VALUES ('evil.com')")).ok).toBe(false);
+      expect((await attempt("INSERT INTO app.college_domains (domain, college_id) VALUES ('evil.com', $1)", [COLLEGE_A])).ok).toBe(false);
     }
   });
 
   it("wishlist alerts and push subscriptions are private to their owner", async () => {
     const me = await createUser();
     const other = await createUser();
-    await sql("INSERT INTO app.wishlist_alerts (user_id, query) VALUES ($1, 'cycle')", [other.id]);
+    await sql("INSERT INTO app.wishlist_alerts (user_id, college_id, query) VALUES ($1, $2, 'cycle')", [other.id, COLLEGE_A]);
     await sql("INSERT INTO app.push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ($1, https://push.example/x, kkkkkkkkkkkkkkkkkkkk, aaaaaaaaaa)", [other.id]);
     await as(me);
     expect(await sql("SELECT id FROM app.wishlist_alerts")).toHaveLength(0);
     expect(await sql("SELECT id FROM app.push_subscriptions")).toHaveLength(0);
-    expect((await attempt("INSERT INTO app.wishlist_alerts (user_id, query) VALUES ($1, 'x')", [other.id])).ok).toBe(false);
+    expect((await attempt("INSERT INTO app.wishlist_alerts (user_id, college_id, query) VALUES ($1, $2, 'x')", [other.id, COLLEGE_A])).ok).toBe(false);
   });
 
   it("activity is tracked by triggers, with no IPs or content", async () => {
@@ -159,7 +158,7 @@ describe("storage bucket", () => {
     const put = (owner: string, folder: string) =>
       attempt(
         "INSERT INTO storage.objects (bucket_id, name, owner_id, metadata) VALUES ('listing-photos', $1, $2, '{}'::jsonb)",
-        [`${folder}/${crypto.randomUUID()}.webp`, owner],
+        [`${COLLEGE_A}/${folder}/${crypto.randomUUID()}.webp`, owner],
       );
     await as(me);
     expect((await put(me.id, me.id)).ok).toBe(true);

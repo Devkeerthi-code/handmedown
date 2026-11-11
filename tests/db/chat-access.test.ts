@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { as, asOwner, attempt, createConversation, createListing, createUser, sql, withTestDatabase } from "./helpers";
+import { COLLEGE_A, as, asOwner, attempt, createConversation, createListing, createUser, sql, withTestDatabase } from "./helpers";
 
 withTestDatabase();
 
@@ -77,7 +77,7 @@ describe("sending messages", () => {
     const listingId = await createListing(seller);
     await sql("INSERT INTO app.blocks (blocker_id, blocked_id) VALUES ($1, $2)", [seller.id, buyer.id]);
     await as(buyer);
-    const r = await attempt("INSERT INTO app.conversations (listing_id, buyer_id, seller_id) VALUES ($1, $2, $3)", [listingId, buyer.id, seller.id]);
+    const r = await attempt("INSERT INTO app.conversations (listing_id, buyer_id, seller_id, college_id) VALUES ($1, $2, $3, $4)", [listingId, buyer.id, seller.id, COLLEGE_A]);
     expect(r.ok).toBe(false);
   });
 
