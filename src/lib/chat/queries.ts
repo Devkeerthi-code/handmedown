@@ -105,24 +105,23 @@ export async function getThread(viewer: Viewer, conversationId: string) {
     if (!conversation) return null;
 
     const otherId = conversation.buyerId === viewer.id ? conversation.sellerId : conversation.buyerId;
-    const [listing, messages, iBlocked, anyBlock] = await Promise.all([
-      tx.listing.findUnique({
-        where: { id: conversation.listingId },
-        select: {
-          id: true, title: true, status: true, priceType: true, price: true, category: true,
-          pickupSpot: true, isDemo: true,
-          photos: { orderBy: { position: "asc" }, take: 1, select: { storagePath: true } },
-        },
-      }),
-      tx.message.findMany({
-        where: { conversationId },
-        orderBy: { id: "desc" },
-        take: 100,
-        select: { id: true, senderId: true, body: true, createdAt: true },
-      }),
-      tx.block.findUnique({ where: { blockerId_blockedId: { blockerId: viewer.id, blockedId: otherId } } }),
-      tx.$queryRaw<{ b: boolean }[]>`SELECT app.conversation_is_blocked(${conversationId}::uuid) AS b`,
-    ]);
+    // Sequential on purpose: a transaction is one connection, and pg rejects overlapping queries on it.
+    const listing = await tx.listing.findUnique({
+      where: { id: conversation.listingId },
+      select: {
+        id: true, title: true, status: true, priceType: true, price: true, category: true,
+        pickupSpot: true, isDemo: true,
+        photos: { orderBy: { position: "asc" }, take: 1, select: { storagePath: true } },
+      },
+    });
+    const messages = await tx.message.findMany({
+      where: { conversationId },
+      orderBy: { id: "desc" },
+      take: 100,
+      select: { id: true, senderId: true, body: true, createdAt: true },
+    });
+    const iBlocked = await tx.block.findUnique({ where: { blockerId_blockedId: { blockerId: viewer.id, blockedId: otherId } } });
+    const anyBlock = await tx.$queryRaw<{ b: boolean }[]>`SELECT app.conversation_is_blocked(${conversationId}::uuid) AS b`;
 
     const other = conversation.buyerId === viewer.id ? conversation.seller : conversation.buyer;
     return {

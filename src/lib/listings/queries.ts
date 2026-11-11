@@ -123,18 +123,18 @@ export const getListingDetail = cache(async (viewer: Viewer | null, id: string) 
     if (!listing) return null;
 
     const isOwner = viewer?.id === listing.sellerId;
-    const [handedDown, conversation, blocked] = await Promise.all([
-      tx.listing.count({ where: { sellerId: listing.sellerId, status: "sold" } }),
-      viewer && !isOwner
-        ? tx.conversation.findUnique({
-            where: { listingId_buyerId: { listingId: id, buyerId: viewer.id } },
-            select: { id: true },
-          })
-        : null,
-      viewer && !isOwner
-        ? tx.$queryRaw<{ b: boolean }[]>`SELECT app.is_blocked_between(${viewer.id}::uuid, ${listing.sellerId}::uuid) AS b`
-        : [{ b: false }],
-    ]);
+    // Sequential on purpose: a transaction is one connection, and pg rejects overlapping queries on it.
+    const handedDown = await tx.listing.count({ where: { sellerId: listing.sellerId, status: "sold" } });
+    const asBuyer = viewer && !isOwner ? viewer : null;
+    const conversation = asBuyer
+      ? await tx.conversation.findUnique({
+          where: { listingId_buyerId: { listingId: id, buyerId: asBuyer.id } },
+          select: { id: true },
+        })
+      : null;
+    const blocked = asBuyer
+      ? await tx.$queryRaw<{ b: boolean }[]>`SELECT app.is_blocked_between(${asBuyer.id}::uuid, ${listing.sellerId}::uuid) AS b`
+      : [{ b: false }];
 
     return {
       ...listing,
