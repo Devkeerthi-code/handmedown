@@ -5,12 +5,40 @@
  */
 import type { Category, Condition, PriceType, ListingStatus } from "../src/generated/prisma/enums";
 
+/** Two DEMO colleges with different branding, so tenant isolation is visible. */
+export const DEMO_COLLEGES = [
+  {
+    key: "dit",
+    id: "00000000-0000-4000-8000-00000000d001",
+    name: "Demo Institute of Technology (DEMO)",
+    shortName: "DIT",
+    slug: "demo-dit",
+    domain: "demo-dit.example.com",
+    accent: "#C88042",
+    pickupSpots: ["Central Library", "Main Canteen", "Main Gate", "Admin Block steps", "Boys Hostel Block A", "Boys Hostel Block B", "Boys Hostel Block C", "Girls Hostel lobby", "Mech Workshop", "Sports Complex"],
+  },
+  {
+    key: "dce",
+    id: "00000000-0000-4000-8000-00000000d002",
+    name: "Demo College of Engineering (DEMO)",
+    shortName: "DCE",
+    slug: "demo-dce",
+    domain: "demo-dce.example.com",
+    accent: "#1F7A8C",
+    pickupSpots: ["Knowledge Centre", "Food Court", "North Gate", "Hostel H1 lobby", "Hostel H4 lobby", "Civil Lab block"],
+  },
+] as const;
+
+export type DemoCollegeKey = (typeof DEMO_COLLEGES)[number]["key"];
+
 export const DEMO_SELLERS = [
-  { key: "ananya", name: "Ananya R. (demo)" },
-  { key: "karthik", name: "Karthik S. (demo)" },
-  { key: "meera", name: "Meera J. (demo)" },
-  { key: "rahul", name: "Rahul V. (demo)" },
-  { key: "sana", name: "Sana F. (demo)" },
+  { key: "ananya", name: "Ananya R. (demo)", college: "dit" },
+  { key: "karthik", name: "Karthik S. (demo)", college: "dit" },
+  { key: "meera", name: "Meera J. (demo)", college: "dit" },
+  { key: "rahul", name: "Rahul V. (demo)", college: "dit" },
+  { key: "sana", name: "Sana F. (demo)", college: "dit" },
+  { key: "arjun", name: "Arjun P. (demo)", college: "dce" },
+  { key: "divya", name: "Divya M. (demo)", college: "dce" },
 ] as const;
 
 type SellerKey = (typeof DEMO_SELLERS)[number]["key"];
@@ -48,6 +76,10 @@ export const DEMO_LISTINGS: DemoListing[] = [
   { seller: "karthik", title: "Study lamp with USB charging", category: "other", condition: "fair", priceType: "free", originalPrice: 650, pickupSpot: "Boys Hostel Block C", hoursAgo: 52, description: "The USB port is loose, the lamp works fine. Take it before I leave." },
   { seller: "sana", title: "Over-ear headphones (wired)", category: "electronics", condition: "good", priceType: "fixed", price: 700, originalPrice: 2499, pickupSpot: "Main Gate", hoursAgo: 75, description: "Both sides work. Ear cushions slightly worn." },
   { seller: "rahul", title: "Bucket and mug set", category: "hostel", condition: "good", priceType: "free", originalPrice: 250, pickupSpot: "Boys Hostel Block A", hoursAgo: 78, description: "Every first year needs one. Free." },
+  { seller: "arjun", title: "Strength of Materials textbook", category: "books", condition: "good", priceType: "fixed", price: 280, originalPrice: 760, pickupSpot: "Knowledge Centre", hoursAgo: 4, description: "Some underlining in pencil. Covers the whole syllabus for sem 3.", bookSemester: 3, bookSubject: "Strength of Materials", bookAuthor: "R.K. Rajput" },
+  { seller: "divya", title: "Table fan, 3 speeds", category: "hostel", condition: "good", priceType: "fixed", price: 650, originalPrice: 1900, pickupSpot: "Hostel H4 lobby", hoursAgo: 9, description: "Quiet on speed 1. Regulator works. Selling before I leave for internship." },
+  { seller: "arjun", title: "Graphing calculator (exam-safe mode)", category: "electronics", condition: "like_new", priceType: "fixed", price: 1400, originalPrice: 3200, pickupSpot: "Food Court", hoursAgo: 20, description: "Comes with the cover and a spare set of batteries." },
+  { seller: "divya", title: "Raincoat, size M", category: "clothing", condition: "good", priceType: "free", originalPrice: 600, pickupSpot: "North Gate", hoursAgo: 30, description: "Monsoon is coming. Free to whoever needs it." },
   { seller: "meera", title: "Fluid Mechanics textbook", category: "books", condition: "fair", priceType: "exchange", exchangeFor: "Strength of Materials (Rajput)", originalPrice: 895, pickupSpot: "Central Library", hoursAgo: 96, description: "Highlighted in places. Swap for Strength of Materials, or make an offer.", isbn: "9788131808153", bookSemester: 4, bookSubject: "Fluid Mechanics", bookAuthor: "R.K. Bansal" },
 ];
 

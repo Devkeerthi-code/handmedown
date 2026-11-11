@@ -1,9 +1,9 @@
 /**
- * Deletes every DEMO account. Their profiles, listings and chats go with them (ON DELETE CASCADE).
+ * Deletes every DEMO account and every DEMO college. Their listings, chats and alerts go with them (ON DELETE CASCADE).
  *   npm run db:unseed
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { scriptSupabaseAdmin } from "../scripts/script-db";
+import { scriptDb, scriptSupabaseAdmin } from "../scripts/script-db";
 
 export async function removeDemoUsers(supabase: SupabaseClient) {
   let removed = 0;
@@ -23,7 +23,10 @@ export async function removeDemoUsers(supabase: SupabaseClient) {
 
 async function main() {
   const removed = await removeDemoUsers(scriptSupabaseAdmin());
-  console.log(`Removed ${removed} demo accounts and all of their listings.`);
+  const db = scriptDb();
+  const { count } = await db.college.deleteMany({ where: { isDemo: true } });
+  await db.$disconnect();
+  console.log(`Removed ${removed} demo accounts and ${count} demo colleges with all of their listings.`);
 }
 
 if (process.argv[1]?.replace(/\\/g, "/").endsWith("prisma/unseed.ts")) {
