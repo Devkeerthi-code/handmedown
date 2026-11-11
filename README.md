@@ -2,7 +2,9 @@
 
 A buy, sell and give-away platform where every college gets its own branded marketplace: seniors pass things on, juniors pay less, and nobody's phone number ends up in a WhatsApp group.
 
-**Live demo:** TODO: add the Vercel link after deploying.
+**Project page:** https://devkeerthi-code.github.io/handmedown/ (screenshots and how it works)
+
+**Live app:** TODO: add the Vercel link after deploying. GitHub Pages only serves static files, so the app itself (auth, chat, database) runs on Vercel + Supabase.
 
 ## Who is this for and what problem does it solve?
 

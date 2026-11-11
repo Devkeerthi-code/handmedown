@@ -49,3 +49,6 @@ next-env.d.ts
 
 # framework-generated agent notes
 AGENTS.md
+
+# Local editor/tool connection settings
+.mcp.json
