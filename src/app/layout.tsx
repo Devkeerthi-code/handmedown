@@ -43,7 +43,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>
+      {/* Extensions like Grammarly add attributes to <body> before React loads; ignore only those. */}
+      <body suppressHydrationWarning>
         <a className="skip" href="#main">
           Skip to content
         </a>
