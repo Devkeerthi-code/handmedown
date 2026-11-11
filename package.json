@@ -1,0 +1,59 @@
+{
+  "name": "handmedown",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/unit",
+    "test:db": "vitest run tests/db",
+    "test:all": "vitest run",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:sync": "tsx scripts/sync-config.ts",
+    "db:setup": "prisma migrate deploy && tsx scripts/sync-config.ts",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:unseed": "tsx prisma/unseed.ts",
+    "vapid:keys": "web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
+    "next": "16.4.6",
+    "pg": "^8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "web-push": "^3.6.7",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "^20",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
+    "dotenv": "^18.0.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "prisma": "^7.10.1",
+    "tailwindcss": "4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^4.1.12"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.1": true,
+    "esbuild@0.28.2": true,
+    "prisma@7.10.1": true
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}
