@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HandMeDown: a second-hand marketplace for every college</title>
+<meta name="description" content="Every college gets its own branded marketplace: seniors pass on textbooks, cycles, coolers and lab coats, juniors pay less, and nobody's phone number ends up in a WhatsApp group.">
+<meta name="theme-color" content="#FCF7F0">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://devkeerthi-code.github.io/handmedown/">
+<meta property="og:title" content="HandMeDown: a second-hand marketplace for every college">
+<meta property="og:description" content="Seniors pass things on, juniors pay less, and nobody's phone number ends up in a WhatsApp group. Only students with that college's email can post or chat.">
+<meta property="og:image" content="https://devkeerthi-code.github.io/handmedown/screenshots/desktop-college-dit.png">
+<meta property="og:image:width" content="1440">
+<meta property="og:image:height" content="900">
+<meta property="og:image:alt" content="A college marketplace on HandMeDown, with demo data">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23483724'/%3E%3Cpath d='M9 16.5V9.5h7l7 7-7 7z' fill='%23C88042'/%3E%3Ccircle cx='12.5' cy='12.5' r='1.6' fill='%23483724'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap">
+<style>
+/* Tokens copied from the app (src/styles/tokens.css) so this page reads as the same product. */
+:root {
+  color-scheme: light;
+  --primary: #483724; --on-primary: #FFFFFF;
+  --accent: #C88042; --accent-ink: #8F531F; --on-accent: #261E17;
+  --accent-light: #F7E7D8;
+  --bg: #FCF7F0; --surface: #FFFFFF; --surface-2: #F6EFE6;
+  --text: #261E17; --heading: #483724;
+  --muted: #736960; --muted-strong: #6B5F55;
+  --border: #E0D8D0; --border-strong: #958779; --tag: #E6DCD2;
+  --mint-bg: #E3F3EA; --mint-ink: #1E6B4A;
+  --footer: #483724; --footer-ink: #F7E7D8;
+  --shadow-1: 0 1px 2px rgba(72, 55, 36, .06);
+  --shadow-2: 0 1px 2px rgba(72, 55, 36, .06), 0 10px 28px -14px rgba(72, 55, 36, .28);
+  --shadow-3: 0 2px 6px rgba(72, 55, 36, .08), 0 24px 48px -20px rgba(72, 55, 36, .35);
+
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-display: clamp(2.25rem, 1.05rem + 4.6vw, 4rem);
+  --fs-title: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  --fs-subtitle: 1.25rem; --fs-body: 1rem; --fs-sm: .875rem; --fs-cap: .75rem; --fs-badge: .6875rem;
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+  --r-xs: 6px; --r-sm: 10px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-pill: 999px;
+  --dur-1: 120ms; --dur-2: 180ms; --ease: cubic-bezier(.2, .8, .2, 1);
+  --gutter: 16px;
+
+  /* The two demo colleges' accent fills (caramel is the platform default, teal is a curated swatch). */
+  --dit: #C88042; --on-dit: #261E17;
+  --dce: #1F7A8C; --on-dce: #FFFFFF;
+}
+@media (min-width: 640px) { :root { --gutter: 24px; } }
+@media (min-width: 1024px) { :root { --gutter: 32px; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 400 var(--fs-body)/1.55 var(--font);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+/* Phones size the layout to the widest painted box; the tilted frame and the stamp's
+   scale-in must never widen the page, so clip at the root too. */
+html { overflow-x: clip; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--accent-ink); text-underline-offset: 3px; }
+::selection { background: var(--accent); color: var(--on-accent); }
+:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; border-radius: var(--r-xs); }
+h1, h2, h3 { color: var(--heading); margin: 0; }
+p { margin: 0; }
+
+.skip {
+  position: absolute; left: var(--s4); top: -100px; z-index: 10;
+  background: var(--primary); color: var(--on-primary); padding: var(--s2) var(--s4);
+  border-radius: var(--r-pill); font-weight: 600; text-decoration: none;
+}
+.skip:focus { top: var(--s4); }
+
+.wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding-inline: var(--gutter); }
+
+/* ---------- Top bar ---------- */
+.bar { background: var(--surface); border-bottom: 1px solid var(--border); }
+.bar .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: var(--s4); }
+.brand { display: inline-flex; align-items: center; gap: var(--s3); color: var(--heading); font-weight: 700; font-size: 1.0625rem; letter-spacing: -.01em; text-decoration: none; }
+.brand svg { width: 32px; height: 32px; flex: none; }
+.bar-link { font-size: var(--fs-sm); font-weight: 600; color: var(--text); text-decoration: none; padding: var(--s2) var(--s3); border-radius: var(--r-pill); transition: background var(--dur-1) var(--ease); }
+.bar-link:hover { background: var(--surface-2); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 48px; padding: 0 var(--s5); border-radius: var(--r-pill);
+  font: 600 var(--fs-body)/1 var(--font); text-decoration: none; white-space: nowrap;
+  transition: transform var(--dur-1) var(--ease), background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-2); }
+.btn-primary:hover { box-shadow: var(--shadow-3); transform: translateY(-1px); }
+.btn-primary:active { transform: scale(.97); }
+.btn-soon {
+  color: var(--muted); border: 1.5px dashed var(--border-strong); background: transparent; cursor: not-allowed;
+}
+.btn-soon .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+
+/* ---------- Hero ---------- */
+.hero { padding-block: var(--s6) var(--s7); }
+.hero-grid { display: grid; gap: var(--s7); align-items: center; }
+.pill {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  padding: 6px var(--s3); border-radius: var(--r-pill);
+  background: var(--accent-light); color: var(--accent-ink);
+  font-size: var(--fs-cap); font-weight: 600;
+}
+.pill svg { width: 14px; height: 14px; flex: none; }
+.hero h1 {
+  margin-top: var(--s4);
+  font-size: var(--fs-display); font-weight: 800; letter-spacing: -.035em; line-height: 1.02;
+}
+.hero-lede { margin-top: var(--s4); font-size: 1.125rem; line-height: 1.5; max-width: 34ch; color: var(--text); }
+.hero-lede strong { color: var(--heading); font-weight: 700; }
+.hero-actions { margin-top: var(--s5); display: flex; flex-wrap: wrap; gap: var(--s3); }
+.hero-note { margin-top: var(--s4); font-size: var(--fs-sm); color: var(--muted); max-width: 44ch; }
+
+.hero-visual { position: relative; display: flex; justify-content: center; padding-block: var(--s4); }
+.hero-visual::before {
+  content: ""; position: absolute; inset: 8% 4% auto auto; width: min(78vw, 400px); aspect-ratio: 1;
+  border-radius: 50%; background: var(--accent-light); z-index: 0;
+}
+.hero-visual::after {
+  content: ""; position: absolute; left: 2%; bottom: 0; width: min(36vw, 170px); aspect-ratio: 1;
+  border-radius: 50%; background: var(--tag); z-index: 0;
+}
+.phone {
+  position: relative; z-index: 1; margin: 0;
+  width: min(64vw, 280px);
+  padding: 6px; border-radius: 30px; background: #211913;
+  box-shadow: var(--shadow-3);
+  transform: rotate(-2.5deg);
+}
+.phone img { border-radius: 24px; }
+.stamp {
+  position: absolute; z-index: 2; right: max(2%, calc(50% - 200px)); top: 18%;
+  padding: 6px var(--s3);
+  border: 3px solid var(--accent-ink); border-radius: var(--r-sm);
+  color: var(--accent-ink); background: color-mix(in srgb, var(--bg) 86%, transparent);
+  font: 800 .9375rem/1.1 var(--font); letter-spacing: .14em; text-transform: uppercase; text-align: center;
+  transform: rotate(8deg);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--bg) 86%, transparent), inset 0 0 0 3px var(--accent-ink);
+  animation: stamp 180ms cubic-bezier(.3, 1.4, .5, 1) 240ms both;
+}
+.stamp small { display: block; font-size: .625rem; letter-spacing: .12em; font-weight: 700; margin-top: 2px; }
+@keyframes stamp {
+  from { transform: rotate(8deg) scale(2.2); opacity: 0; }
+  to { transform: rotate(8deg) scale(1); opacity: 1; }
+}
+
+/* ---------- Sections ---------- */
+.section { padding-block: var(--s8); }
+.section + .section { border-top: 1px solid var(--border); }
+.kicker { font-size: var(--fs-cap); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink); }
+.section h2 { margin-top: var(--s2); font-size: var(--fs-title); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; max-width: 22ch; }
+.section-lede { margin-top: var(--s3); color: var(--muted); max-width: 60ch; }
+
+/* Problem */
+.problem-lede { margin-top: var(--s4); max-width: 62ch; }
+.problems { list-style: none; margin: var(--s6) 0 0; padding: 0; display: grid; gap: var(--s3); counter-reset: p; }
+.problems li {
+  counter-increment: p; position: relative;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--s5); padding-left: calc(var(--s5) + 44px); box-shadow: var(--shadow-1);
+}
+.problems li::before {
+  content: counter(p, decimal-leading-zero);
+  position: absolute; left: var(--s5); top: var(--s5);
+  width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-sm);
+  background: var(--accent-light); color: var(--accent-ink); font-size: var(--fs-cap); font-weight: 700;
+}
+.problems strong { display: block; color: var(--heading); font-size: 1.0625rem; letter-spacing: -.01em; }
+.problems span { display: block; margin-top: var(--s1); font-size: var(--fs-sm); color: var(--muted); }
+.answer {
+  margin-top: var(--s5); padding: var(--s5); border-radius: var(--r-lg);
+  background: var(--accent-light); color: var(--text); max-width: 72ch;
+}
+.answer strong { color: var(--heading); }
+
+/* Demo notice */
+.demo-note {
+  margin-top: var(--s5); display: flex; gap: var(--s3); align-items: flex-start;
+  padding: var(--s3) var(--s4); border: 1.5px dashed var(--border-strong); border-radius: var(--r-md);
+  font-size: var(--fs-sm); color: var(--text); max-width: 72ch;
+}
+.demo-note b {
+  flex: none; padding: 2px var(--s2); border: 1.5px dashed currentColor; border-radius: var(--r-pill);
+  font-size: var(--fs-badge); letter-spacing: .1em; color: var(--accent-ink);
+}
+
+/* Phone strip */
+.strip {
+  margin: var(--s6) calc(var(--gutter) * -1) 0; padding: var(--s2) var(--gutter) var(--s4);
+  display: flex; gap: var(--s4); list-style: none;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter);
+  overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
+}
+.strip li { flex: 0 0 min(68vw, 250px); scroll-snap-align: start; }
+.shot { margin: 0; }
+.shot .frame {
+  padding: 5px; border-radius: 26px; background: #211913; box-shadow: var(--shadow-2);
+  transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.shot .frame img { border-radius: 21px; }
+.shot figcaption { margin-top: var(--s3); }
+.shot figcaption strong { display: block; color: var(--heading); font-size: var(--fs-sm); }
+.shot figcaption span { display: block; font-size: var(--fs-cap); color: var(--muted); margin-top: 2px; }
+.strip-hint { margin-top: var(--s2); font-size: var(--fs-cap); color: var(--muted); }
+@media (hover: hover) {
+  .shot:hover .frame { transform: translateY(-4px); box-shadow: var(--shadow-3); }
+}
+
+/* Features */
+.features { margin: var(--s6) 0 0; padding: 0; list-style: none; display: grid; gap: var(--s3); }
+.features li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--s5); box-shadow: var(--shadow-1);
+}
+.features h3 { font-size: 1.0625rem; font-weight: 700; letter-spacing: -.01em; display: flex; align-items: center; gap: var(--s3); }
+.features h3 svg { width: 32px; height: 32px; padding: 7px; border-radius: var(--r-sm); background: var(--accent-light); color: var(--accent-ink); flex: none; }
+.features p { margin-top: var(--s2); font-size: var(--fs-sm); color: var(--muted); }
+.features code, .how code { font: 500 .8125rem/1.4 ui-monospace, "SF Mono", Consolas, monospace; background: var(--surface-2); padding: 1px 5px; border-radius: var(--r-xs); color: var(--text); }
+
+/* How it works */
+.stack { margin: var(--s5) 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2); }
+.stack li { padding: 6px var(--s3); border-radius: var(--r-pill); background: var(--tag); color: var(--text); font-size: var(--fs-sm); font-weight: 500; }
+.arch { margin-top: var(--s6); display: grid; gap: 0; }
+.tier {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--s5); box-shadow: var(--shadow-1);
+}
+.tier h3 { font-size: var(--fs-body); font-weight: 700; }
+.tier .where { font-size: var(--fs-cap); color: var(--muted); font-weight: 500; }
+.tier ul { margin: var(--s3) 0 0; padding: 0; list-style: none; display: grid; gap: var(--s2); }
+.tier li { font-size: var(--fs-sm); padding-left: var(--s4); position: relative; }
+.tier li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 2px; background: var(--accent); }
+.tier-db { background: var(--accent-light); border-color: transparent; }
+.link {
+  display: flex; align-items: center; justify-content: center; gap: var(--s2);
+  padding: var(--s2) 0; font-size: var(--fs-cap); color: var(--muted); font-weight: 500; text-align: center;
+}
+.link svg { width: 16px; height: 16px; color: var(--accent-ink); flex: none; transform: rotate(90deg); }
+.path { margin: var(--s4) 0 0; padding: 0; list-style: none; display: grid; gap: var(--s4); counter-reset: s; max-width: 72ch; }
+.path li { counter-increment: s; display: grid; grid-template-columns: 32px 1fr; gap: var(--s3); font-size: var(--fs-sm); }
+.path li::before {
+  content: counter(s); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--primary); color: var(--on-primary); font-size: var(--fs-cap); font-weight: 700;
+}
+.path-title { font-size: var(--fs-subtitle); font-weight: 700; letter-spacing: -.01em; margin-top: var(--s7); }
+
+/* Colleges */
+.colleges { margin-top: var(--s6); display: grid; gap: var(--s6); }
+.college { margin: 0; }
+.pennant {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  padding: var(--s2) var(--s5) var(--s2) var(--s3);
+  font-size: var(--fs-sm); font-weight: 700;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%);
+  border-radius: var(--r-sm) 0 0 0;
+}
+.pennant i { font-style: normal; font-weight: 500; font-size: var(--fs-cap); opacity: .9; }
+.pennant-dit { background: var(--dit); color: var(--on-dit); }
+.pennant-dce { background: var(--dce); color: var(--on-dce); }
+.college .desk {
+  border-radius: 0 var(--r-lg) var(--r-lg) var(--r-lg); overflow: hidden;
+  border: 1px solid var(--border); box-shadow: var(--shadow-2);
+}
+.college figcaption { margin-top: var(--s3); font-size: var(--fs-sm); color: var(--muted); }
+
+/* Footer */
+.foot { background: var(--footer); color: var(--footer-ink); padding-block: var(--s7); }
+.foot .wrap { display: grid; gap: var(--s5); }
+.foot p { font-size: var(--fs-sm); max-width: 56ch; }
+.foot .brand { color: var(--footer-ink); }
+.foot a:not(.brand) { color: var(--footer-ink); font-weight: 600; }
+.foot :focus-visible { outline-color: var(--footer-ink); }
+.foot-lede { margin-top: var(--s3); }
+.foot-meta { margin-top: var(--s2); font-size: var(--fs-cap); opacity: .85; }
+
+/* ---------- Larger screens ---------- */
+@media (min-width: 640px) {
+  .problems { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .problems li { padding-left: var(--s5); padding-top: calc(var(--s5) + 44px); }
+  .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .colleges { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); }
+}
+@media (min-width: 900px) {
+  .hero { padding-block: var(--s8) var(--s8); }
+  .hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); }
+  .phone { width: 280px; }
+  .stamp { right: 0; }
+  .features { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .arch { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.15fr); align-items: stretch; }
+  .link { flex-direction: column; padding: 0 var(--s3); max-width: 96px; }
+  .link svg { transform: none; }
+  .foot .wrap { grid-template-columns: 1fr auto; align-items: end; }
+}
+@media (min-width: 1040px) {
+  .strip {
+    margin-inline: 0; padding: var(--s2) 0 0; overflow: visible;
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s5);
+  }
+  .strip-hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
+  .btn-primary:hover, .shot:hover .frame { transform: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="HandMeDown, top of page">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#483724"/><path d="M9 16.5V9.5h7l7 7-7 7z" fill="#C88042"/><circle cx="12.5" cy="12.5" r="1.6" fill="#483724"/></svg>
+      HandMeDown
+    </a>
+    <a class="bar-link" href="https://github.com/Devkeerthi-code/handmedown">Source on GitHub</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.4 1.8 3-.1.9 2.9 2.4 1.8-.9 2.9.9 2.9-2.4 1.8-.9 2.9-3-.1L12 21l-2.4-1.8-3 .1-.9-2.9-2.4-1.8.9-2.9-.9-2.9 2.4-1.8.9-2.9 3 .1z"/><path d="m9 12 2 2 4-4"/></svg>
+          One marketplace per campus, students only
+        </span>
+        <h1 id="hero-title">HandMeDown</h1>
+        <p class="hero-lede">A buy, sell and give-away platform where <strong>every college gets its own branded marketplace</strong>: seniors pass things on, juniors pay less, and nobody's phone number ends up in a WhatsApp group.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/Devkeerthi-code/handmedown">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+            View the code on GitHub
+          </a>
+          <!-- TODO: replace with the Vercel URL after deploying -->
+          <span class="btn btn-soon"><span class="dot" aria-hidden="true"></span>Live app: coming soon</span>
+        </div>
+        <p class="hero-note">This page is a showcase. The app itself needs a server and a Supabase database, so it isn't hosted here.</p>
+      </div>
+
+      <div class="hero-visual">
+        <figure class="phone">
+          <img src="screenshots/phone-college-dit.png" width="720" height="1560" fetchpriority="high"
+               alt="The DIT college marketplace on a phone: the heading reads 'Your seniors' stuff, at junior prices', with a pill saying 'Only for students of Demo Institute of Technology (DEMO)' and a bottom tab bar with Browse, Alerts, Sell, Chats and You.">
+        </figure>
+        <p class="stamp" aria-hidden="true">Demo data<small>labelled in-app</small></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="problem-title">
+    <div class="wrap">
+      <p class="kicker">The problem</p>
+      <h2 id="problem-title">Every year, seniors dump useful things that juniors then buy new.</h2>
+      <p class="problem-lede">Textbooks, cycles, coolers, mattresses, lab coats, scientific calculators. What selling does happen is in noisy WhatsApp groups, where:</p>
+      <ol class="problems">
+        <li><strong>There's no search.</strong><span>You scroll and hope someone posted it recently.</span></li>
+        <li><strong>Photos are scattered.</strong><span>Across hundreds of messages, with no idea what's still available.</span></li>
+        <li><strong>You share your number.</strong><span>With strangers, just to close a deal.</span></li>
+      </ol>
+      <p class="answer"><strong>HandMeDown</strong> gives each campus one place to list items with photos, search them (including books by ISBN), chat in-app without exchanging numbers, and get a notification when the thing you want shows up. Only students with that college's email can post or chat there.</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="phone-title">
+    <div class="wrap">
+      <p class="kicker">On a phone</p>
+      <h2 id="phone-title">Built at 360 px first, because that's where students use it.</h2>
+      <p class="demo-note"><b>DEMO</b><span>Every screenshot on this page is captured from the running app with clearly labelled demo data. The colleges, names and listings are demo accounts, not real students.</span></p>
+
+      <ul class="strip" role="region" aria-label="Phone screenshots, scroll sideways for more" tabindex="0">
+        <li>
+          <figure class="shot">
+            <div class="frame"><img src="screenshots/phone-directory.png" width="720" height="1560" loading="lazy" alt="HandMeDown home on a phone: 'Every college gets its own HandMeDown', a Find your college button and a college search box."></div>
+            <figcaption><strong>Find your college</strong><span>Anyone can browse. Posting needs that college's email.</span></figcaption>
+          </figure>
+        </li>
+        <li>
+          <figure class="shot">
+            <div class="frame"><img src="screenshots/phone-listing.png" width="720" height="1560" loading="lazy" alt="A demo listing for a Casio fx-991ES Plus calculator at 600 rupees, showing 1,295 rupees new, with a sticky Open chat button."></div>
+            <figcaption><strong>Listing</strong><span>Price next to the price when new, so the saving is obvious.</span></figcaption>
+          </figure>
+        </li>
+        <li>
+          <figure class="shot">
+            <div class="frame"><img src="screenshots/phone-chat.png" width="720" height="1560" loading="lazy" alt="An in-app chat with a verified demo seller, the listing pinned at the top and a note that only the two people can read the chat."></div>
+            <figcaption><strong>Chat</strong><span>In-app, with the listing pinned. No phone numbers.</span></figcaption>
+          </figure>
+        </li>
+        <li>
+          <figure class="shot">
+            <div class="frame"><img src="screenshots/phone-sell.png" width="720" height="1560" loading="lazy" alt="The Sell, swap or give away form: up to 5 photos, title, category, condition and a Set a price, Free or Exchange control."></div>
+            <figcaption><strong>Sell form</strong><span>Price, Free or Exchange. Photos shrink on the phone.</span></figcaption>
+          </figure>
+        </li>
+        <li>
+          <figure class="shot">
+            <div class="frame"><img src="screenshots/phone-alerts.png" width="720" height="1560" loading="lazy" alt="Wishlist alerts: a Turn on notifications prompt and a New alert form with keyword or ISBN, category and max price."></div>
+            <figcaption><strong>Wishlist alerts</strong><span>A push notification when a match is listed.</span></figcaption>
+          </figure>
+        </li>
+      </ul>
+      <p class="strip-hint" aria-hidden="true">Swipe for more screens</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="features-title">
+    <div class="wrap">
+      <p class="kicker">Features</p>
+      <h2 id="features-title">What it does</h2>
+      <ul class="features">
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M10 21v-6h4v6"/></svg>Many colleges, one platform</h3>
+          <p>Each college lives at <code>/c/&lt;slug&gt;</code> with its own name, logo, accent colour, meeting spots and categories. Any student can set one up from the site, no code or config.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>College email only</h3>
+          <p>Anyone can browse. Only students with a confirmed email on that college's domain can post, chat or set alerts there. Gmail, Outlook and other public providers are refused.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Chat without numbers</h3>
+          <p>One real-time thread per listing per buyer, with unread counts, a warning if you type a phone number, and block or report.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search, including ISBN</h3>
+          <p>Postgres full-text search with filters and sorting. Books carry a checksum-validated ISBN, searchable as ISBN-10 or ISBN-13.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Wishlist alerts</h3>
+          <p>"Notify me when a cycle under ₹2,000 is listed", sent by web push, at most once per alert per listing, only within your college.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2"/><circle cx="17.5" cy="10.5" r="2"/><circle cx="8.5" cy="7.5" r="2"/><circle cx="6.5" cy="12.5" r="2"/><path d="M12 2a10 10 0 0 0 0 20c1.7 0 2-1.3 1.4-2.4-.7-1.2.1-2.6 1.5-2.6H17a5 5 0 0 0 5-5C22 6.5 17.5 2 12 2z"/></svg>Contrast-checked branding</h3>
+          <p>Any accent colour a college picks becomes accessible light and dark shades that meet WCAG AA. Colours that fail are nudged in lightness, keeping their hue.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Listings that load on hostel Wi-Fi</h3>
+          <p>Up to 5 photos, compressed and resized on the phone before upload. Mark items reserved or sold, and a rubber stamp lands on the photo.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>Reports and roles</h3>
+          <p>A reported listing is hidden immediately until that college's moderators review it. College admins manage branding, spots, categories and their team.</p>
+        </li>
+        <li>
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Colleges stay separate</h3>
+          <p>A college's chats, alerts and reports are never visible from another college. Postgres Row Level Security enforces it, not just app code.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section how" aria-labelledby="how-title">
+    <div class="wrap">
+      <p class="kicker">How it works</p>
+      <h2 id="how-title">Next.js on Vercel, Supabase underneath, Postgres as the authority.</h2>
+      <ul class="stack" aria-label="Tech stack">
+        <li>Next.js 16 (App Router)</li>
+        <li>TypeScript (strict)</li>
+        <li>Tailwind CSS 4</li>
+        <li>Prisma 7</li>
+        <li>Supabase Postgres, Auth, Storage, Realtime</li>
+        <li>zod</li>
+        <li>web-push</li>
+        <li>Vitest</li>
+      </ul>
+
+      <div class="arch" role="group" aria-label="Architecture: student's browser, Next.js server, Supabase">
+        <div class="tier">
+          <h3>Student's browser</h3>
+          <p class="where">Phone first</p>
+          <ul>
+            <li>Next.js pages</li>
+            <li>College theme: accent to accessible CSS variables</li>
+            <li>Photo and logo compression (canvas)</li>
+            <li>Service worker for push</li>
+          </ul>
+        </div>
+        <p class="link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>requests, server actions</p>
+        <div class="tier">
+          <h3>Next.js server</h3>
+          <p class="where">Vercel</p>
+          <ul>
+            <li>Session refresh and sign-in redirects</li>
+            <li>Server components resolve the college from the slug</li>
+            <li>Server actions: zod plus college checks</li>
+            <li><code>withRls(user)</code>: SET role + JWT claims</li>
+            <li>web-push sender, after the response</li>
+          </ul>
+        </div>
+        <p class="link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>every query inside RLS</p>
+        <div class="tier tier-db">
+          <h3>Supabase</h3>
+          <p class="where">Free tier</p>
+          <ul>
+            <li>Auth: confirmed email = membership</li>
+            <li>Postgres, private <code>app</code> schema: <code>college_id</code> on every tenant row, RLS by membership, triggers, rate limits, full-text search</li>
+            <li>Storage: photo paths start with the college</li>
+            <li>Realtime: private chat channels, authorized by the same functions</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="path-title">The request path</h3>
+      <ol class="path">
+        <li><span>The college layout resolves the college from <code>/c/[slug]</code> and applies its theme.</span></li>
+        <li><span>Every user-facing query runs inside <code>withRls(user, fn)</code>, which opens a transaction and sets <code>request.jwt.claims</code> and <code>role = authenticated</code>, the same mechanism Supabase's own API uses.</span></li>
+        <li><span>Postgres then enforces the same college-scoped policies on server queries, Storage uploads and Realtime subscriptions. A forgotten check in app code still can't leak another college's data.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="colleges-title">
+    <div class="wrap">
+      <p class="kicker">Per-college branding</p>
+      <h2 id="colleges-title">Same platform, each college in its own colour.</h2>
+      <p class="section-lede">A college picks one accent colour when it signs up. HandMeDown derives accessible shades from it, while the brown, neutrals, type and spacing stay the same, so every marketplace still looks like HandMeDown. Both colleges below are demo colleges.</p>
+      <div class="colleges">
+        <figure class="college">
+          <span class="pennant pennant-dit">DIT <i>caramel</i></span>
+          <div class="desk"><img src="screenshots/desktop-college-dit.png" width="1440" height="900" loading="lazy" alt="Desktop view of the DIT demo marketplace with caramel accents: nav, 'Only for students of Demo Institute of Technology (DEMO)' pill and Browse listings and Sell an item buttons."></div>
+          <figcaption>Demo Institute of Technology, using the platform caramel.</figcaption>
+        </figure>
+        <figure class="college">
+          <span class="pennant pennant-dce">DCE <i>teal</i></span>
+          <div class="desk"><img src="screenshots/desktop-college-dce.png" width="1440" height="900" loading="lazy" alt="Desktop view of the DCE demo marketplace with teal accents and a teal-tinted hero panel, with a Join with your DCE email button."></div>
+          <figcaption>Demo College of Engineering, which picked teal. Same layout, its own colour.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div>
+      <a class="brand" href="https://github.com/Devkeerthi-code/handmedown">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#C88042"/><path d="M9 16.5V9.5h7l7 7-7 7z" fill="#483724"/><circle cx="12.5" cy="12.5" r="1.6" fill="#C88042"/></svg>
+        HandMeDown
+      </a>
+      <p class="foot-lede">A second-hand marketplace for every college. Read the README for the architecture, design decisions and known limitations.</p>
+    </div>
+    <div>
+      <p><a href="https://github.com/Devkeerthi-code/handmedown">github.com/Devkeerthi-code/handmedown</a></p>
+      <p class="foot-meta">Built by Devkeerthi-code</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
