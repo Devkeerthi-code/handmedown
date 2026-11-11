@@ -1,10 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const SIGNED_IN_ONLY = /^\/(sell|chats|alerts|account|admin)(\/|$)|^\/l\/[^/]+\/edit$/;
+
 /**
  * Refreshes the Supabase session cookie on every page request so Server
- * Components always see a valid token. It doesn't block anything itself:
- * each page and action checks access on its own.
+ * Components always see a valid token, and sends signed-out visitors of
+ * private pages straight to sign-in. Pages and actions still check access themselves.
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -24,7 +26,13 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const { pathname, search } = request.nextUrl;
+  if (!data?.claims?.sub && SIGNED_IN_ONLY.test(pathname)) {
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", pathname + search);
+    return NextResponse.redirect(login);
+  }
   return response;
 }
 
