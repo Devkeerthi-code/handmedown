@@ -11,6 +11,6 @@ it("blocks public webmail as a college domain, but not college domains", () => {
 });
 
 it("takes the domain from an email", () => {
-  expect(emailDomain("Asha@CSE.NITC.ac.in")).toBe("cse.nitc.ac.in");
+  expect(emailDomain("Student@CSE.Example.ac.in")).toBe("cse.example.ac.in");
   expect(emailDomain("nope")).toBe("");
 });
