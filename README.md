@@ -18,14 +18,24 @@ A buy, sell and give-away platform where every college gets its own branded mark
 
 ## Screenshots
 
-TODO: add screenshots to `docs/` and link them here:
+Captured from the running app with the clearly labelled DEMO data (`npm run db:seed`). Every name below is a demo account.
 
-- the college directory
-- "Bring HandMeDown to your college" with its live preview
-- two DEMO colleges side by side, showing the different branding
-- a listing, the sell form, a chat and alerts
-- college Manage and the platform admin page
-- both mobile (360 px) and desktop
+**Phone (360 px), where most students will use it**
+
+| College marketplace | Listing | Sell form | Chat | Wishlist alerts |
+| --- | --- | --- | --- | --- |
+| ![DIT marketplace on a phone](docs/screenshots/phone-college-dit.png) | ![Listing page](docs/screenshots/phone-listing.png) | ![Sell form](docs/screenshots/phone-sell.png) | ![Chat thread](docs/screenshots/phone-chat.png) | ![Wishlist alerts](docs/screenshots/phone-alerts.png) |
+
+Each college gets its own accent colour, worked out to pass contrast checks: [DIT (caramel)](docs/screenshots/phone-college-dit.png) and [DCE (teal)](docs/screenshots/phone-college-dce.png). The [college directory](docs/screenshots/phone-directory.png) is where students find theirs.
+
+**Desktop**
+
+| | |
+| --- | --- |
+| ![College directory](docs/screenshots/desktop-directory.png) | ![Bring HandMeDown to your college, with live preview](docs/screenshots/desktop-add-your-college.png) |
+| ![DIT marketplace](docs/screenshots/desktop-college-dit.png) | ![DCE marketplace, different branding](docs/screenshots/desktop-college-dce.png) |
+| ![Listing](docs/screenshots/desktop-listing.png) | ![Chat](docs/screenshots/desktop-chat.png) |
+| ![College Manage page](docs/screenshots/desktop-college-manage.png) | ![Platform admin](docs/screenshots/desktop-platform-admin.png) |
 
 The design system and the per-college theming rules are documented in [`docs/DESIGN.md`](docs/DESIGN.md).
 
