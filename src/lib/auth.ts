@@ -21,6 +21,7 @@ export type Me = Viewer & {
   collegeId: string | null;
   collegeSlug: string | null;
   collegeName: string | null;
+  collegeShortName: string | null;
   /** Your staff role in your own college, if any. */
   collegeRole: CollegeRole | null;
   /** Member of some college and not banned. */
@@ -40,7 +41,7 @@ export const getMe = cache(async (): Promise<Me | null> => {
       collegeId: true,
       isAdmin: true,
       bannedAt: true,
-      college: { select: { slug: true, name: true } },
+      college: { select: { slug: true, name: true, shortName: true } },
       collegeRoles: { select: { collegeId: true, role: true } },
     },
   });
@@ -52,6 +53,7 @@ export const getMe = cache(async (): Promise<Me | null> => {
     collegeId: profile.collegeId,
     collegeSlug: profile.college?.slug ?? null,
     collegeName: profile.college?.name ?? null,
+    collegeShortName: profile.college?.shortName ?? null,
     collegeRole: role,
     verified: profile.collegeId !== null && profile.bannedAt === null,
     isAdmin: profile.isAdmin,

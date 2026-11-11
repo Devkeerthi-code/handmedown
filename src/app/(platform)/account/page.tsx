@@ -31,7 +31,7 @@ export default async function AccountPage() {
             <h2 className="panel__title" id="collegeTitle" style={{ marginBottom: 0 }}>
               Your college
               <Link className="btn btn--primary btn--sm" href={`/c/${me.collegeSlug}`}>
-                Open {me.collegeName}
+                Open {me.collegeShortName ?? me.collegeName}
               </Link>
             </h2>
             <p className="notice" role="status">
