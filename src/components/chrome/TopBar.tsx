@@ -92,7 +92,7 @@ export function TopBar({ me, unread, college }: Props) {
                 <Icon name="user" />
               </Link>
             ) : (
-              <Link className="btn btn--outline btn--sm" href="/login">
+              <Link className="btn btn--outline btn--sm topbar__signin" href="/login">
                 Sign in
               </Link>
             )}

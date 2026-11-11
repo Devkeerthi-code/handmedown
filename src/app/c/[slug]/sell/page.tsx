@@ -26,7 +26,7 @@ export default async function SellPage({ params }: PageProps<"/c/[slug]/sell">) 
       <div className="sell">
         <div className="page__head">
           <h1>Sell, swap or give away</h1>
-          <p>Takes about a minute. Only {college.shortName} students will see a chat button on it.</p>
+          <p>Takes about a minute. Only verified {college.shortName} students can message you about it.</p>
         </div>
       </div>
       <ListingForm

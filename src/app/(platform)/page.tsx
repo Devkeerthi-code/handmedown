@@ -52,7 +52,7 @@ export default async function PlatformHome() {
                 </Link>
               )}
               <Link className="btn btn--outline btn--lg" href="/start">
-                Bring HandMeDown to your college
+                Add your college
               </Link>
             </div>
           </div>

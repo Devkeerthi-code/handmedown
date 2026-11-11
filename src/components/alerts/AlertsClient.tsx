@@ -108,7 +108,7 @@ export function AlertsClient({
         <p>Fill in what matters. Leave the rest empty.</p>
         <div className="field" data-invalid={errors.query ? "" : undefined}>
           <label htmlFor="aq">Keyword, title or ISBN</label>
-          <input id="aq" className="input" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={60} placeholder="e.g. cycle, Grewal, 9788174091956" aria-describedby="aq-error" />
+          <input id="aq" className="input" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={60} placeholder="e.g. cycle, Grewal, ISBN" aria-describedby="aq-error" />
           <span className="field__error" id="aq-error" role="alert">
             <Icon name="info" />
             {errors.query}

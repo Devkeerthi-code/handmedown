@@ -62,6 +62,10 @@ html { scrollbar-color: var(--border-strong) transparent; }
 .tabbar__fab { width: 48px; height: 48px; margin-top: -22px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; box-shadow: 0 6px 16px -6px rgba(72, 55, 36, .6); border: 4px solid var(--surface); box-sizing: content-box; }
 .tabbar__sell { gap: 1px !important; }
 @media (min-width: 900px) { .tabbar { display: none; } }
+/* Below 900px the tab bar has its own Sign in, so the topbar pill would be a duplicate. */
+@media (max-width: 899px) { .topbar__signin { display: none; } }
+/* Touch screens: icon-only controls reach the 44px minimum tap size. */
+@media (pointer: coarse) { .icon-tile, .icon-btn, .menu summary { width: 44px; height: 44px; } }
 
 /* ---------- Buttons (kit pills) ---------- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: 48px; padding: 0 var(--s5); border-radius: var(--r-pill); font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; border: 1.5px solid transparent; transition: background-color var(--dur-1), color var(--dur-1), border-color var(--dur-1), opacity var(--dur-1); user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -107,9 +111,11 @@ html { scrollbar-color: var(--border-strong) transparent; }
 .chip .ic { width: 16px; height: 16px; }
 
 /* ---------- Form controls (kit pill input) ---------- */
-.field { display: grid; gap: 6px; }
+.field { display: grid; gap: 6px; align-content: start; }
 .field > label, .field__label { font-size: var(--fs-sm); font-weight: 600; color: var(--heading); }
 .field__hint { font-size: var(--fs-cap); color: var(--muted); }
+/* Inline links in hints ("Forgot it?") get a 44px tap area without shifting the layout. */
+.field__hint .link { display: inline-block; padding-block: 14px; margin-block: -14px; }
 .input, .select, .textarea { width: 100%; height: 48px; padding: 0 var(--s5); border-radius: var(--r-pill); background: var(--surface); border: 1.5px solid var(--border-strong); color: var(--text); font-size: var(--fs-body); transition: border-color var(--dur-1), box-shadow var(--dur-1); }
 .textarea { height: auto; min-height: 112px; padding: var(--s3) var(--s4); border-radius: var(--r-lg); resize: vertical; line-height: 1.5; }
 .select { appearance: none; padding-right: 44px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23958779' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; background-size: 18px; }
@@ -156,7 +162,11 @@ html { scrollbar-color: var(--border-strong) transparent; }
 .hero__circle--b { width: 140px; height: 140px; right: 30px; bottom: -80px; opacity: .7; }
 .hero h1 { font-size: var(--fs-display); letter-spacing: -.035em; line-height: 1.02; font-weight: 800; max-width: 12ch; }
 .hero__lede { color: var(--muted-strong); font-size: var(--fs-body); max-width: 46ch; }
-.hero__ctas { display: none; gap: var(--s3); flex-wrap: wrap; }
+.hero__ctas { display: flex; gap: var(--s3); flex-wrap: wrap; }
+/* On phones the tab bar already offers Sell / Join, so the hero keeps only its primary action. */
+@media (max-width: 899px) { .hero__ctas .btn--outline { display: none; } }
+/* Long labels wrap instead of pushing past the 16px gutter on 360px phones. */
+.hero__ctas .btn { max-width: 100%; white-space: normal; text-align: center; height: auto; min-height: 52px; padding-block: 12px; }
 .hero__search { display: grid; grid-template-columns: 1fr auto; gap: var(--s2); max-width: 520px; }
 .hero__search .input { box-shadow: var(--shadow-1); }
 .stats { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: var(--s5); align-items: end; }
@@ -193,7 +203,7 @@ html { scrollbar-color: var(--border-strong) transparent; }
 @media (min-width: 640px) { .cats { grid-auto-columns: 26%; } }
 @media (min-width: 1100px) { .cats { grid-auto-flow: row; grid-template-columns: repeat(7, 1fr); overflow: visible; margin: 0; padding: 0; } }
 .cat { position: relative; scroll-snap-align: start; aspect-ratio: 4 / 3.4; border-radius: var(--r-md); overflow: hidden; display: block; box-shadow: var(--shadow-1); isolation: isolate; text-align: left; }
-.cat__art { position: absolute; inset: 0; padding: 10% 18% 30%; transition: transform var(--dur-2) var(--ease); }
+.cat__art { position: absolute; inset: 0; padding: 8% 22% 42%; transition: transform var(--dur-2) var(--ease); }
 .cat:hover .cat__art { transform: scale(1.05) rotate(-2deg); }
 .cat::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, transparent 38%, rgba(38, 30, 23, .82)); }
 .cat__label { position: absolute; z-index: 2; left: 12px; right: 12px; bottom: 10px; color: #fff; }
@@ -269,11 +279,11 @@ html { scrollbar-color: var(--border-strong) transparent; }
 .state--error .state__icon .ic { width: 26px; height: 26px; }
 
 /* ---------- Banner (kit "Meet the Makers") ---------- */
-.banner { position: relative; overflow: hidden; display: grid; gap: var(--s5); padding: var(--s6) var(--s5); border-radius: var(--r-xl); background: var(--banner); color: var(--banner-ink); }
+.banner { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); padding: var(--s6) var(--s5); border-radius: var(--r-xl); background: var(--banner); color: var(--banner-ink); }
 .banner h2 { color: var(--banner-ink); font-size: var(--fs-title); }
 .banner p { color: var(--banner-muted); max-width: 48ch; margin-top: var(--s2); }
 .banner__tags { position: absolute; right: -20px; top: -30px; width: 200px; height: 200px; border-radius: 50%; border: 36px solid color-mix(in srgb, var(--accent) 25%, transparent); pointer-events: none; }
-.banner .btn { justify-self: start; }
+.banner .btn { justify-self: start; max-width: 100%; white-space: normal; text-align: center; height: auto; min-height: 52px; padding-block: 12px; }
 @media (min-width: 900px) { .banner { grid-template-columns: 1fr auto; align-items: center; padding: var(--s7) var(--s8); } .banner__tags { right: 160px; top: -60px; } }
 
 /* ---------- How it works (replaces testimonials) ---------- */
@@ -313,7 +323,7 @@ html { scrollbar-color: var(--border-strong) transparent; }
 .back:hover { color: var(--heading); }
 .panel { background: var(--surface); border-radius: var(--r-lg); padding: var(--s5); box-shadow: var(--shadow-1); border: 1px solid var(--border); }
 @media (min-width: 640px) { .panel { padding: var(--s6); } }
-.panel__title { font-size: 1.0625rem; margin-bottom: var(--s4); display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.panel__title { font-size: 1.0625rem; margin-bottom: var(--s4); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2); }
 
 /* ---------- Detail ---------- */
 .detail { display: grid; gap: var(--s5); }
@@ -341,7 +351,7 @@ html { scrollbar-color: var(--border-strong) transparent; }
 .detail__title { font-size: clamp(1.375rem, 1.1rem + 1vw, 1.875rem); letter-spacing: -.025em; }
 .detail .price b { font-size: 1.75rem; }
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
-.fact { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3); display: grid; gap: 2px; }
+.fact { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3); display: grid; gap: 2px; align-content: start; }
 .fact small { font-size: var(--fs-cap); color: var(--muted); display: flex; gap: 4px; align-items: center; }
 .fact small .ic { width: 14px; height: 14px; }
 .fact b { font-size: var(--fs-sm); color: var(--heading); font-weight: 600; }
@@ -370,6 +380,7 @@ html { scrollbar-color: var(--border-strong) transparent; }
 /* ---------- Sell ---------- */
 .sell { display: grid; gap: var(--s4); max-width: 760px; margin-inline: auto; }
 .sell .page__head { margin-bottom: 0; }
+.sell + .sell { margin-top: var(--s5); }
 .photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
 @media (min-width: 640px) { .photos { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .photo-add { aspect-ratio: 1; border-radius: var(--r-md); border: 1.5px dashed var(--border-strong); display: grid; place-content: center; justify-items: center; gap: 4px; text-align: center; font-size: var(--fs-cap); color: var(--muted); background: var(--surface-2); cursor: pointer; padding: 6px; }
@@ -425,7 +436,7 @@ html { scrollbar-color: var(--border-strong) transparent; }
 .thread__head { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); }
 .thread__head .back { margin: 0; }
 .thread__who { flex: 1; min-width: 0; }
-.thread__who b { font-size: var(--fs-sm); color: var(--heading); display: flex; gap: 6px; align-items: center; }
+.thread__who b { font-size: var(--fs-sm); color: var(--heading); display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: center; }
 .thread__who small { font-size: var(--fs-cap); color: var(--muted); }
 .pinned { margin: var(--s3) var(--s4) 0; display: grid; grid-template-columns: 52px 1fr auto; gap: var(--s3); align-items: center; padding: var(--s2) var(--s3) var(--s2) var(--s2); border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--border); }
 .pinned__img { width: 52px; height: 52px; border-radius: var(--r-sm); padding: 6px; }

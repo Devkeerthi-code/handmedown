@@ -47,7 +47,7 @@ export function DisplayNameForm({ initial }: { initial: string }) {
 export function SignOutButton() {
   const [pending, start] = useTransition();
   return (
-    <button className="btn btn--ghost" type="button" disabled={pending} onClick={() => start(() => signOut())}>
+    <button className="btn btn--ghost btn--sm" type="button" disabled={pending} onClick={() => start(() => signOut())}>
       Sign out
     </button>
   );

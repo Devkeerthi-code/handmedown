@@ -496,7 +496,7 @@ function OnboardingGate({ state }: { state: Exclude<OnboardingState, { kind: "re
           title={`${state.college.name} is already here`}
           actions={
             <Link className="btn btn--primary" href={`/c/${state.college.slug}`}>
-              Go to {state.college.name}
+              Open their marketplace
               <Icon name="arrow" />
             </Link>
           }

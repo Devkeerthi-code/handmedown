@@ -188,7 +188,7 @@ export function ListingForm({
             value={values.title}
             onChange={(e) => set("title", e.target.value)}
             maxLength={80}
-            placeholder="e.g. Casio fx-991ES Plus calculator"
+            placeholder="e.g. Casio fx-991ES Plus"
             autoComplete="off"
             {...aria("title")}
           />
