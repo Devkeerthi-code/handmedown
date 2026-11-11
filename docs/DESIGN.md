@@ -61,7 +61,7 @@ Testimonials slot became an honest **How it works** (post → chat in-app → me
     alert prefill from the home band ("cycle under 2000" fills keyword = cycle, max = 2000); Undo on every destructive action.
 11. **Mobile-first:** 360 px with zero horizontal overflow (checked on every route), a bottom tab bar with a raised Sell
     button, a sticky price + CTA bar on the detail page, single-pane chats on mobile and two panes on desktop, and admin table rows that turn into cards on mobile.
-12. **Dark theme** in warm espresso tones (not grey). It follows `prefers-color-scheme`, the manual toggle is saved to localStorage, and the
+12. **Dark theme** in warm espresso tones (not grey). Light is the default for everyone; dark is opt-in from the toggle, saved to localStorage, and the
     illustrations re-tint through CSS variables.
 13. **Accessibility:** skip link, semantic landmarks, labelled inputs, `aria-invalid` + inline errors +
     a focusable error summary, `role="switch"` / `radiogroup`, `aria-live` results and messages, a focus trap in the sheet,
@@ -224,7 +224,7 @@ derives an accessible light and dark theme from it. The rules are tested over ~2
 ### What is college-branded and what stays HandMeDown
 - **College:** `--accent`, `--on-accent`, `--accent-ink`, `--accent-light`, `--ring` (focus ring), selection colour, native `accent-color`, the illustration accent `--ill-a`, and the monogram tile.
 - **Platform (unchanged):** `--primary` brown (primary CTAs, selected chips, sent bubbles), all neutrals, the mint, peach and rose status colours, the danger colour, type, radius, spacing and springs. A college marketplace still looks like HandMeDown, only in its own colour.
-- **Mechanism:** `themeCssVars(theme)` returns `--ca-l-*` and `--ca-d-*` properties for a `style` prop. `src/styles/college.css` maps them onto the real tokens inside any `[data-college]` element: light by default, dark via `:root[data-theme="dark"]` or `prefers-color-scheme: dark` unless the user forced light. Directory cards each carry their own `[data-college]`, so one page can show many colleges at once.
+- **Mechanism:** `themeCssVars(theme)` returns `--ca-l-*` and `--ca-d-*` properties for a `style` prop. `src/styles/college.css` maps them onto the real tokens inside any `[data-college]` element: light by default, dark only via `:root[data-theme="dark"]` (the toggle). Directory cards each carry their own `[data-college]`, so one page can show many colleges at once.
 
 ### Curated swatches
 All eight pass unchanged in light mode. The deep ones are lifted in dark mode so they still read as buttons on espresso.

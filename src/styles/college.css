@@ -18,15 +18,6 @@
   --accent-light: var(--ca-d-accent-light, #2E2219);
   --ring: var(--ca-d-ring, #E3A96F);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) [data-college] {
-    --accent: var(--ca-d-accent, #C88042);
-    --accent-ink: var(--ca-d-accent-ink, #E3A96F);
-    --on-accent: var(--ca-d-on-accent, #17110C);
-    --accent-light: var(--ca-d-accent-light, #2E2219);
-    --ring: var(--ca-d-ring, #E3A96F);
-  }
-}
 [data-college] :focus-visible { outline-color: var(--ring); }
 [data-college] ::selection { background: var(--accent); color: var(--on-accent); }
 

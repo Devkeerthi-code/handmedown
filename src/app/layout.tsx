@@ -21,10 +21,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FCF7F0" },
-    { media: "(prefers-color-scheme: dark)", color: "#17110C" },
-  ],
+  themeColor: "#FCF7F0",
 };
 
 async function viewerId() {

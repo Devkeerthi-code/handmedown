@@ -6,22 +6,15 @@ import { Icon } from "@/components/Icon";
 const KEY = "hmd-theme";
 
 function currentTheme(): "light" | "dark" {
-  const set = document.documentElement.dataset.theme;
-  if (set === "light" || set === "dark") return set;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
 function subscribe(onChange: () => void) {
-  const mq = window.matchMedia("(prefers-color-scheme: dark)");
-  mq.addEventListener("change", onChange);
   window.addEventListener("hmd-theme", onChange);
-  return () => {
-    mq.removeEventListener("change", onChange);
-    window.removeEventListener("hmd-theme", onChange);
-  };
+  return () => window.removeEventListener("hmd-theme", onChange);
 }
 
-/** Light is the default; dark follows the system unless you pick one here (remembered on this device). */
+/** Light is the default for everyone; dark is opt-in here and remembered on this device. */
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, currentTheme, () => "light" as const);
   const dark = theme === "dark";
