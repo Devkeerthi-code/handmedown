@@ -14,10 +14,11 @@ type Props = {
   isOwner?: boolean;
   existingConversationId?: string | null;
   className?: string;
+  base: string;
 };
 
 /** "Chat with seller": opens (or reopens) the in-app chat. Never shows a phone number. */
-export function ChatButton({ listingId, status, signedIn, isOwner, existingConversationId, className = "btn--sm" }: Props) {
+export function ChatButton({ listingId, status, signedIn, isOwner, existingConversationId, className = "btn--sm", base }: Props) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
@@ -33,16 +34,16 @@ export function ChatButton({ listingId, status, signedIn, isOwner, existingConve
 
   const open = () => {
     if (!signedIn) {
-      router.push(`/login?next=${encodeURIComponent(`/l/${listingId}`)}`);
+      router.push(`/login?next=${encodeURIComponent(`${base}/l/${listingId}`)}`);
       return;
     }
     if (existingConversationId) {
-      router.push(`/chats/${existingConversationId}`);
+      router.push(`${base}/chats/${existingConversationId}`);
       return;
     }
     start(async () => {
       const result = await startConversation(listingId);
-      if (result.ok) router.push(`/chats/${result.data.id}`);
+      if (result.ok) router.push(`${base}/chats/${result.data.id}`);
       else toast(result.error, undefined, { type: "error" });
     });
   };

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { getViewer } from "@/lib/auth";
+import { getMe, getViewer, isMemberOf } from "@/lib/auth";
+import { getCollegeBySlug } from "@/lib/college";
 import { categoryOf, conditionLabel, tintFor } from "@/lib/catalog";
 import { formatIsbn } from "@/lib/isbn";
 import { formatInr, initials, timeAgo } from "@/lib/format";
@@ -17,15 +18,18 @@ import { ReportDialog } from "@/components/ReportDialog";
 
 const idSchema = z.string().uuid();
 
-async function load(id: string) {
+async function load(slug: string, id: string) {
   if (!idSchema.safeParse(id).success) notFound();
-  const viewer = await getViewer();
+  const college = await getCollegeBySlug(slug);
+  if (!college) notFound();
+  const viewer = await getMe();
   const listing = await getListingDetail(viewer, id);
-  if (!listing) notFound();
-  return { viewer, listing };
+  // A listing is only reachable under its own college's URL.
+  if (!listing || listing.collegeId !== college.id) notFound();
+  return { viewer, listing, college };
 }
 
-export async function generateMetadata({ params }: PageProps<"/l/[id]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/c/[slug]/l/[id]">): Promise<Metadata> {
   const { id } = await params;
   if (!idSchema.safeParse(id).success) return { title: "Listing not found" };
   const listing = await getListingDetail(await getViewer(), id).catch(() => null);
@@ -34,15 +38,17 @@ export async function generateMetadata({ params }: PageProps<"/l/[id]">): Promis
   return { title: listing.title, description: `${price} · ${conditionLabel(listing.condition)} · pick up at ${listing.pickupSpot}` };
 }
 
-export default async function ListingPage({ params }: PageProps<"/l/[id]">) {
-  const { id } = await params;
-  const { viewer, listing } = await load(id);
+export default async function ListingPage({ params }: PageProps<"/c/[slug]/l/[id]">) {
+  const { slug, id } = await params;
+  const { viewer, listing, college } = await load(slug, id);
   const signedIn = viewer !== null;
+  const base = `/c/${college.slug}`;
+  const canChat = isMemberOf(viewer, college.id) && college.status === "active";
   const cat = categoryOf(listing.category);
 
   return (
     <div className="container page has-cta-bar">
-      <Link className="back" href="/#listings">
+      <Link className="back" href={`${base}#listings`}>
         <Icon name="left" />
         Back to listings
       </Link>
@@ -167,7 +173,7 @@ export default async function ListingPage({ params }: PageProps<"/l/[id]">) {
           </div>
 
           {listing.isOwner ? (
-            <OwnerBar id={listing.id} status={listing.status} />
+            <OwnerBar id={listing.id} status={listing.status} base={base} />
           ) : (
             <>
               <p className="safety">
@@ -179,6 +185,18 @@ export default async function ListingPage({ params }: PageProps<"/l/[id]">) {
                   <Icon name="ban" />
                   You can&apos;t chat with this seller.
                 </p>
+              ) : !canChat ? (
+                <p className="notice notice--warn">
+                  <Icon name="lock" />
+                  {college.status !== "active"
+                    ? "This college is suspended, so new chats are paused."
+                    : `Only verified ${college.shortName} students can chat here. `}
+                  {college.status === "active" ? (
+                    <Link className="link" href={signedIn ? "/account" : `/login?next=${encodeURIComponent(`${base}/l/${listing.id}`)}`}>
+                      {signedIn ? `Join with your ${college.shortName} email` : "Sign in"}
+                    </Link>
+                  ) : null}
+                </p>
               ) : (
                 <div className="detail__actions">
                   <ChatButton
@@ -187,18 +205,21 @@ export default async function ListingPage({ params }: PageProps<"/l/[id]">) {
                     signedIn={signedIn}
                     existingConversationId={listing.conversationId}
                     className="btn--lg btn--block"
+                    base={base}
                   />
                 </div>
               )}
               <div>
-                <ReportDialog listingId={listing.id} label="Report this listing" trigger="link" signedIn={signedIn} afterReport="home" />
+                {canChat ? (
+                  <ReportDialog listingId={listing.id} label="Report this listing" trigger="link" signedIn={signedIn} afterReport="home" homeHref={base} />
+                ) : null}
               </div>
             </>
           )}
         </div>
       </div>
 
-      {!listing.isOwner && !listing.blocked ? (
+      {!listing.isOwner && !listing.blocked && canChat ? (
         <div className="cta-bar">
           <Price priceType={listing.priceType} price={listing.price} showOriginal={false} />
           <ChatButton
@@ -207,6 +228,7 @@ export default async function ListingPage({ params }: PageProps<"/l/[id]">) {
             signedIn={signedIn}
             existingConversationId={listing.conversationId}
             className="btn--block"
+            base={base}
           />
         </div>
       ) : null}

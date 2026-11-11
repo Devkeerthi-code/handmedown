@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { requireMe } from "@/lib/auth";
-import { allowedDomains } from "@/app/actions/auth";
 import { getMyListings } from "@/lib/listings/queries";
 import { categoryOf, tintFor } from "@/lib/catalog";
 import { formatInr, timeAgo } from "@/lib/format";
@@ -16,7 +15,7 @@ export const metadata: Metadata = { title: "Your account" };
 
 export default async function AccountPage() {
   const me = await requireMe("/account");
-  const [listings, domains] = await Promise.all([getMyListings(me), me.verified ? [] : allowedDomains()]);
+  const listings = await getMyListings(me);
   const now = new Date();
 
   return (
@@ -27,24 +26,45 @@ export default async function AccountPage() {
           <p>{me.email}</p>
         </div>
 
-        {me.verified ? (
-          <p className="notice" role="status">
-            <Icon name="verified" />
-            You&apos;re a verified student. Your listings show the Verified badge.
-          </p>
+        {me.verified && me.collegeSlug ? (
+          <section className="panel" aria-labelledby="collegeTitle" style={{ display: "grid", gap: "var(--s3)" }}>
+            <h2 className="panel__title" id="collegeTitle" style={{ marginBottom: 0 }}>
+              Your college
+              <Link className="btn btn--primary btn--sm" href={`/c/${me.collegeSlug}`}>
+                Open {me.collegeName}
+              </Link>
+            </h2>
+            <p className="notice" role="status">
+              <Icon name="verified" />
+              You&apos;re a verified member of {me.collegeName}
+              {me.collegeRole ? ` (${me.collegeRole})` : ""}. You can post, chat and set alerts there.
+            </p>
+            <details>
+              <summary className="link link--muted" style={{ cursor: "pointer" }}>Moved to another college?</summary>
+              <p className="section__sub">
+                Switch your account to your new college email. Once you confirm it, you&apos;ll move to that college.
+                Chats from your old college stay with that college.
+              </p>
+              <VerifyGate />
+            </details>
+          </section>
+        ) : me.banned ? (
+          <p className="notice notice--error"><Icon name="ban" />This account can&apos;t post or chat.</p>
         ) : (
           <div className="panel">
-            <VerifyGate domains={domains} />
+            <VerifyGate />
           </div>
         )}
 
         <section className="panel" aria-labelledby="myListings">
           <h2 className="panel__title" id="myListings">
             Your listings
-            <Link className="btn btn--primary btn--sm" href="/sell">
-              <Icon name="plus" />
-              New
-            </Link>
+            {me.collegeSlug ? (
+              <Link className="btn btn--primary btn--sm" href={`/c/${me.collegeSlug}/sell`}>
+                <Icon name="plus" />
+                New
+              </Link>
+            ) : null}
           </h2>
           {listings.length === 0 ? (
             <p className="section__sub">Nothing listed yet. Graduating soon? Your old books will sell fast.</p>
@@ -52,7 +72,7 @@ export default async function AccountPage() {
             <ul className="mine">
               {listings.map((l) => (
                 <li key={l.id}>
-                  <Link href={`/l/${l.id}`}>
+                  <Link href={`/c/${l.college.slug}/l/${l.id}`}>
                     <span className="mine__img" style={{ background: `var(--${tintFor(l.id)})` }}>
                       {l.photos[0] ? (
                         <Image src={photoUrl(l.photos[0].storagePath, "thumb")} alt="" width={56} height={56} unoptimized />
@@ -63,6 +83,7 @@ export default async function AccountPage() {
                     <span style={{ minWidth: 0 }}>
                       <b>{l.title}</b>
                       <small>
+                        {l.college.shortName} ·{" "}
                         {l.priceType === "fixed" ? formatInr(l.price ?? 0) : l.priceType === "free" ? "Free" : "Exchange"} ·{" "}
                         {timeAgo(l.createdAt, now)}
                       </small>
@@ -78,14 +99,10 @@ export default async function AccountPage() {
         </section>
 
         <section className="panel" aria-labelledby="profileTitle" style={{ display: "grid", gap: "var(--s4)" }}>
-          <h2 className="panel__title" id="profileTitle" style={{ marginBottom: 0 }}>
-            Profile
-          </h2>
+          <h2 className="panel__title" id="profileTitle" style={{ marginBottom: 0 }}>Profile</h2>
           <DisplayNameForm initial={me.displayName} />
           <div style={{ display: "flex", gap: "var(--s2)", flexWrap: "wrap" }}>
-            <Link className="btn btn--outline btn--sm" href="/account/password">
-              Change password
-            </Link>
+            <Link className="btn btn--outline btn--sm" href="/account/password">Change password</Link>
             <SignOutButton />
           </div>
         </section>

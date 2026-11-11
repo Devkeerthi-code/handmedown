@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CAMPUS } from "@/config/campus";
-import { getViewer } from "@/lib/auth";
+import { notFound, unstable_rethrow } from "next/navigation";
+import { getMe, isMemberOf } from "@/lib/auth";
+import { getCollegeBySlug, type CollegeInfo } from "@/lib/college";
 import { CATEGORIES } from "@/lib/catalog";
 import { logError } from "@/lib/errors";
 import { requestTime } from "@/lib/format";
@@ -14,24 +15,41 @@ import { HeroDrift } from "@/components/home/HeroDrift";
 import { Footer } from "@/components/chrome/Footer";
 import { ErrorState } from "@/components/ErrorState";
 
-async function loadHome(searchParams: Record<string, string | string[] | undefined>) {
-  const viewer = await getViewer();
+async function loadHome(college: CollegeInfo, searchParams: Record<string, string | string[] | undefined>) {
+  const viewer = await getMe();
   const filters = parseSearchFilters(searchParams);
+  if (filters.category && !college.categories.includes(filters.category)) filters.category = undefined;
   try {
-    const [page, stats, counts] = await Promise.all([firstPage(viewer, filters), getCampusStats(), getCategoryCounts()]);
+    const [page, stats, counts] = await Promise.all([
+      firstPage(viewer, college.id, filters),
+      getCampusStats(college.id),
+      getCategoryCounts(college.id),
+    ]);
     return { viewer, filters, page, stats, counts, failed: false as const, now: requestTime() };
   } catch (error) {
+    unstable_rethrow(error);
     logError("home", error);
     return { viewer, filters, page: null, stats: null, counts: {} as Awaited<ReturnType<typeof getCategoryCounts>>, failed: true as const, now: requestTime() };
   }
 }
 
-export default async function HomePage({ searchParams }: PageProps<"/">) {
-  const { viewer, filters, page, stats, counts, failed, now } = await loadHome(await searchParams);
+export default async function CollegeHomePage({ params, searchParams }: PageProps<"/c/[slug]">) {
+  const college = await getCollegeBySlug((await params).slug);
+  if (!college) notFound();
+  const sp = await searchParams;
+  const { viewer, filters, page, stats, counts, failed, now } = await loadHome(college, sp);
+  const base = `/c/${college.slug}`;
+  const member = isMemberOf(viewer, college.id);
 
   return (
     <>
-      <Hero stats={stats} />
+      {sp.welcome === "1" ? (
+        <p className="notice container" role="status" style={{ marginTop: 16 }}>
+          <Icon name="check" />
+          {college.name} is live. Share {base} with your classmates. You can change branding, spots and moderators under Manage.
+        </p>
+      ) : null}
+      <Hero stats={stats} college={college} member={member} signedIn={viewer !== null} />
 
       <section className="section container" aria-labelledby="catTitle" style={{ paddingBottom: 0 }}>
         <div className="section__head">
@@ -43,7 +61,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           </div>
         </div>
         <div className="cats" role="group" aria-label="Categories">
-          {CATEGORIES.map((c) => {
+          {CATEGORIES.filter((c) => college.categories.includes(c.id)).map((c) => {
             const active = filters.category === c.id;
             const qs = filtersToQuery({ ...filters, category: active ? undefined : c.id }).toString();
             const n = counts[c.id] ?? 0;
@@ -51,7 +69,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               <Link
                 key={c.id}
                 className="cat"
-                href={`/${qs ? `?${qs}` : ""}#listings`}
+                href={`${base}${qs ? `?${qs}` : ""}#listings`}
                 scroll={false}
                 aria-pressed={active}
                 style={{ background: `var(--${c.tint})` }}
@@ -76,14 +94,14 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               Fresh on campus
             </h2>
             <p className="section__sub">
-              Posted by verified {CAMPUS.short} students. Anything tagged DEMO is an example listing.
+              Posted by verified {college.shortName} students. Anything tagged DEMO is an example listing.
             </p>
           </div>
         </div>
         {failed || !page ? (
-          <ErrorState title="Couldn't load listings" retryHref="/" />
+          <ErrorState title="Couldn't load listings" retryHref={base} />
         ) : (
-          <Browse filters={filters} initial={page} viewerId={viewer?.id ?? null} now={now} />
+          <Browse filters={filters} initial={page} viewerId={viewer?.id ?? null} now={now} base={base} collegeId={college.id} />
         )}
       </section>
 
@@ -97,7 +115,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               before you leave.
             </p>
           </div>
-          <Link className="btn btn--accent btn--lg" href="/sell">
+          <Link className="btn btn--accent btn--lg" href={`${base}/sell`}>
             <Icon name="plus" />
             Post a listing
           </Link>
@@ -127,13 +145,23 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         </ol>
       </section>
 
-      <AlertBand />
-      <Footer />
+      <AlertBand base={base} />
+      <Footer college={{ name: college.name, base }} />
     </>
   );
 }
 
-function Hero({ stats }: { stats: CampusStats | null }) {
+function Hero({
+  stats,
+  college,
+  member,
+  signedIn,
+}: {
+  stats: CampusStats | null;
+  college: CollegeInfo;
+  member: boolean;
+  signedIn: boolean;
+}) {
   const hasStats = stats && stats.live + stats.handedDown > 0;
   return (
     <section className="hero" aria-labelledby="heroTitle">
@@ -143,7 +171,7 @@ function Hero({ stats }: { stats: CampusStats | null }) {
         <div style={{ display: "grid", gap: "var(--s5)", position: "relative" }}>
           <span className="kicker">
             <Icon name="verified" />
-            Only for students of {CAMPUS.name}
+            Only for students of {college.name}
           </span>
           <h1 id="heroTitle">Your seniors’ stuff, at junior prices.</h1>
           <p className="hero__lede">
@@ -154,9 +182,15 @@ function Hero({ stats }: { stats: CampusStats | null }) {
             <Link className="btn btn--primary btn--lg" href="#listings">
               Browse listings
             </Link>
-            <Link className="btn btn--outline btn--lg" href="/sell">
-              Sell an item
-            </Link>
+            {member ? (
+              <Link className="btn btn--outline btn--lg" href={`/c/${college.slug}/sell`}>
+                Sell an item
+              </Link>
+            ) : (
+              <Link className="btn btn--outline btn--lg" href={signedIn ? "/account" : "/signup"}>
+                Join with your {college.shortName} email
+              </Link>
+            )}
           </div>
           {hasStats ? (
             <div className="stats" aria-label="Live campus numbers">

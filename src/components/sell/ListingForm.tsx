@@ -6,7 +6,6 @@ import { createListing, discardUploads, updateListing } from "@/app/actions/list
 import { Icon } from "@/components/Icon";
 import { Segmented } from "@/components/Segmented";
 import { useToast } from "@/components/Toast";
-import { PICKUP_SPOTS } from "@/config/campus";
 import { CATEGORIES, CONDITIONS } from "@/lib/catalog";
 import { normalizeIsbn } from "@/lib/isbn";
 import type { ListingInput } from "@/lib/validation";
@@ -46,6 +45,10 @@ export const EMPTY_LISTING: ListingFormValues = {
 
 type Props = {
   userId: string;
+  collegeId: string;
+  base: string;
+  pickupSpots: string[];
+  categories: string[];
   listingId?: string;
   initial?: ListingFormValues;
   initialPhotos?: PhotoItem[];
@@ -81,7 +84,16 @@ function Field({
   );
 }
 
-export function ListingForm({ userId, listingId, initial = EMPTY_LISTING, initialPhotos = [] }: Props) {
+export function ListingForm({
+  userId,
+  collegeId,
+  base,
+  pickupSpots,
+  categories,
+  listingId,
+  initial = EMPTY_LISTING,
+  initialPhotos = [],
+}: Props) {
   const router = useRouter();
   const toast = useToast();
   const [values, setValues] = useState(initial);
@@ -131,7 +143,7 @@ export function ListingForm({ userId, listingId, initial = EMPTY_LISTING, initia
         .map((p) => ({ path: p.path!, width: p.width!, height: p.height! })),
     };
     start(async () => {
-      const result = listingId ? await updateListing(listingId, payload) : await createListing(payload);
+      const result = listingId ? await updateListing(listingId, payload) : await createListing(collegeId, payload);
       if (!result.ok) {
         setErrors(result.fields ?? {});
         toast(result.error, undefined, { type: "error" });
@@ -139,7 +151,7 @@ export function ListingForm({ userId, listingId, initial = EMPTY_LISTING, initia
         return;
       }
       toast(listingId ? "Changes saved" : "Your listing is live", listingId ? undefined : "Juniors can find it now.");
-      router.push(`/l/${result.data.id}`);
+      router.push(`${base}/l/${result.data.id}`);
       router.refresh();
     });
   };
@@ -167,7 +179,7 @@ export function ListingForm({ userId, listingId, initial = EMPTY_LISTING, initia
       </div>
 
       <div className="panel" style={{ display: "grid", gap: "var(--s4)" }}>
-        <PhotoPicker userId={userId} photos={photos} onChange={setPhotos} error={errors.photos} />
+        <PhotoPicker userId={userId} collegeId={collegeId} photos={photos} onChange={setPhotos} error={errors.photos} />
 
         <Field id="title" label="What are you selling?" error={errors.title}>
           <input
@@ -188,7 +200,7 @@ export function ListingForm({ userId, listingId, initial = EMPTY_LISTING, initia
               <option value="" disabled>
                 Choose one
               </option>
-              {CATEGORIES.map((c) => (
+              {CATEGORIES.filter((c) => categories.includes(c.id)).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
                 </option>
@@ -281,7 +293,7 @@ export function ListingForm({ userId, listingId, initial = EMPTY_LISTING, initia
             <option value="" disabled>
               Choose a campus spot
             </option>
-            {PICKUP_SPOTS.map((s) => (
+            {pickupSpots.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>

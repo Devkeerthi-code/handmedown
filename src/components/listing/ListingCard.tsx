@@ -13,10 +13,12 @@ export function ListingCard({
   listing,
   viewerId,
   now,
+  base,
 }: {
   listing: ListingCardData;
   viewerId: string | null;
   now: number;
+  base: string;
 }) {
   const isNew = now - new Date(listing.createdAt).getTime() < SIX_HOURS;
   return (
@@ -37,7 +39,7 @@ export function ListingCard({
       </div>
       <div className="card__body">
         <h3 className="card__title">
-          <Link href={`/l/${listing.id}`}>{listing.title}</Link>
+          <Link href={`${base}/l/${listing.id}`}>{listing.title}</Link>
         </h3>
         <Price priceType={listing.priceType} price={listing.price} originalPrice={listing.originalPrice} />
         <div className="meta">
@@ -51,11 +53,11 @@ export function ListingCard({
       </div>
       <div className="card__cta">
         {listing.sellerId === viewerId ? (
-          <Link className="btn btn--outline btn--sm" href={`/l/${listing.id}`}>
+          <Link className="btn btn--outline btn--sm" href={`${base}/l/${listing.id}`}>
             Your listing
           </Link>
         ) : (
-          <ChatButton listingId={listing.id} status={listing.status} signedIn={viewerId !== null} />
+          <ChatButton listingId={listing.id} status={listing.status} signedIn={viewerId !== null} base={base} />
         )}
       </div>
     </article>

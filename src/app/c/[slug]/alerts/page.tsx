@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import { requireMe } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { isMemberOf, requireMe } from "@/lib/auth";
+import { getCollegeBySlug } from "@/lib/college";
 import { withRls } from "@/lib/db/rls";
 import { AlertsClient, type AlertRow } from "@/components/alerts/AlertsClient";
 import { PushPanel } from "@/components/alerts/PushPanel";
+import { MemberGate } from "@/components/college/MemberGate";
 
 export const metadata: Metadata = { title: "Wishlist alerts" };
 
@@ -10,12 +13,22 @@ function first(v: string | string[] | undefined) {
   return Array.isArray(v) ? v[0] : v;
 }
 
-export default async function AlertsPage({ searchParams }: PageProps<"/alerts">) {
+export default async function AlertsPage({ params, searchParams }: PageProps<"/c/[slug]/alerts">) {
+  const college = await getCollegeBySlug((await params).slug);
+  if (!college) notFound();
   const sp = await searchParams;
-  const me = await requireMe("/alerts");
+  const me = await requireMe(`/c/${college.slug}/alerts`);
+  if (!isMemberOf(me, college.id) || college.status !== "active") {
+    return (
+      <div className="container page">
+        <MemberGate me={me} college={college} action="set alerts" />
+      </div>
+    );
+  }
+
   const rows = await withRls(me, (tx) =>
     tx.wishlistAlert.findMany({
-      where: { userId: me.id },
+      where: { userId: me.id, collegeId: college.id },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -34,12 +47,17 @@ export default async function AlertsPage({ searchParams }: PageProps<"/alerts">)
     <div className="container page">
       <div className="page__head">
         <h1>Wishlist alerts</h1>
-        <p>Tell us what you&apos;re hunting for. When a matching listing is posted, you get a notification.</p>
+        <p>
+          Tell us what you&apos;re hunting for at {college.shortName}. When a matching listing is posted, you get a
+          notification.
+        </p>
       </div>
       <div className="alerts">
         <PushPanel vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null} />
         <AlertsClient
           alerts={alerts}
+          collegeId={college.id}
+          categories={college.categories}
           prefill={{
             query: first(sp.q)?.slice(0, 60),
             category: first(sp.category),

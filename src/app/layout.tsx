@@ -1,10 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { unstable_rethrow } from "next/navigation";
 import "./globals.css";
 import { getMe } from "@/lib/auth";
-import { getUnreadTotal } from "@/lib/chat/queries";
-import { CAMPUS } from "@/config/campus";
-import { TopBar } from "@/components/chrome/TopBar";
 import { UnreadWatcher } from "@/components/chrome/UnreadWatcher";
 import { themeScript } from "@/components/chrome/ThemeToggle";
 import { PressPhysics } from "@/components/PressPhysics";
@@ -13,8 +11,9 @@ import { ToastProvider } from "@/components/Toast";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "HandMeDown · Buy and sell on campus", template: "%s · HandMeDown" },
-  description: `Textbooks, cycles, coolers and lab coats from ${CAMPUS.name} students who are graduating. Search by title or ISBN and chat without sharing your number.`,
+  title: { default: "HandMeDown · Campus marketplaces for students", template: "%s · HandMeDown" },
+  description:
+    "Every college gets its own marketplace: seniors hand down textbooks, cycles and hostel gear to juniors. Search by title or ISBN and chat without sharing your number.",
   applicationName: "HandMeDown",
 };
 
@@ -28,19 +27,17 @@ export const viewport: Viewport = {
   ],
 };
 
-async function loadChrome() {
+async function viewerId() {
   try {
-    const me = await getMe();
-    const unread = me ? await getUnreadTotal(me) : 0;
-    return { me, unread };
-  } catch {
-    // The header must still render if the database is briefly unreachable.
-    return { me: null, unread: 0 };
+    return (await getMe())?.id ?? null;
+  } catch (error) {
+    unstable_rethrow(error);
+    return null;
   }
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const { me, unread } = await loadChrome();
+  const userId = await viewerId();
   return (
     <html lang="en-IN" className={inter.variable} suppressHydrationWarning>
       <head>
@@ -51,12 +48,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <ToastProvider>
-          <TopBar me={me} unread={unread} />
-          <main id="main" tabIndex={-1}>
-            {children}
-          </main>
+          {children}
           <PressPhysics />
-          {me ? <UnreadWatcher userId={me.id} /> : null}
+          {userId ? <UnreadWatcher userId={userId} /> : null}
         </ToastProvider>
       </body>
     </html>

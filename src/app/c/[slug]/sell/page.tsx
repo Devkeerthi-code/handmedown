@@ -1,30 +1,22 @@
 import type { Metadata } from "next";
-import { requireMe } from "@/lib/auth";
-import { allowedDomains } from "@/app/actions/auth";
+import { notFound } from "next/navigation";
+import { isMemberOf, requireMe } from "@/lib/auth";
+import { getCollegeBySlug } from "@/lib/college";
 import { ListingForm } from "@/components/sell/ListingForm";
-import { VerifyGate } from "@/components/sell/VerifyGate";
-import { Icon } from "@/components/Icon";
+import { MemberGate } from "@/components/college/MemberGate";
 
 export const metadata: Metadata = { title: "Sell an item" };
 
-export default async function SellPage() {
-  const me = await requireMe("/sell");
+export default async function SellPage({ params }: PageProps<"/c/[slug]/sell">) {
+  const college = await getCollegeBySlug((await params).slug);
+  if (!college) notFound();
+  const base = `/c/${college.slug}`;
+  const me = await requireMe(`${base}/sell`);
 
-  if (me.banned) {
+  if (!isMemberOf(me, college.id) || college.status !== "active") {
     return (
       <div className="container page">
-        <p className="notice notice--error">
-          <Icon name="ban" />
-          Your account can&apos;t post listings. If you think this is a mistake, contact the HandMeDown admins.
-        </p>
-      </div>
-    );
-  }
-
-  if (!me.verified) {
-    return (
-      <div className="container page">
-        <VerifyGate domains={await allowedDomains()} currentEmail={me.email} />
+        <MemberGate me={me} college={college} action="post listings" />
       </div>
     );
   }
@@ -34,10 +26,16 @@ export default async function SellPage() {
       <div className="sell">
         <div className="page__head">
           <h1>Sell, swap or give away</h1>
-          <p>Takes about a minute. You can edit or mark it sold any time.</p>
+          <p>Takes about a minute. Only {college.shortName} students will see a chat button on it.</p>
         </div>
       </div>
-      <ListingForm userId={me.id} />
+      <ListingForm
+        userId={me.id}
+        collegeId={college.id}
+        base={base}
+        pickupSpots={college.pickupSpots}
+        categories={college.categories}
+      />
     </div>
   );
 }

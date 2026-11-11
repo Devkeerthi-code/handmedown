@@ -2,17 +2,21 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireMe } from "@/lib/auth";
+import { getCollegeBySlug } from "@/lib/college";
 import { getListingForEdit } from "@/lib/listings/queries";
 import { ListingForm, type ListingFormValues } from "@/components/sell/ListingForm";
 
 export const metadata: Metadata = { title: "Edit listing" };
 
-export default async function EditListingPage({ params }: PageProps<"/l/[id]/edit">) {
-  const { id } = await params;
+export default async function EditListingPage({ params }: PageProps<"/c/[slug]/l/[id]/edit">) {
+  const { slug, id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
-  const me = await requireMe(`/l/${id}/edit`);
+  const college = await getCollegeBySlug(slug);
+  if (!college) notFound();
+  const base = `/c/${college.slug}`;
+  const me = await requireMe(`${base}/l/${id}/edit`);
   const listing = await getListingForEdit(me, id);
-  if (!listing) notFound();
+  if (!listing || listing.collegeId !== college.id) notFound();
 
   const values: ListingFormValues = {
     title: listing.title,
@@ -23,7 +27,7 @@ export default async function EditListingPage({ params }: PageProps<"/l/[id]/edi
     price: listing.price?.toString() ?? "",
     originalPrice: listing.originalPrice?.toString() ?? "",
     exchangeFor: listing.exchangeFor ?? "",
-    pickupSpot: listing.pickupSpot,
+    pickupSpot: college.pickupSpots.includes(listing.pickupSpot) ? listing.pickupSpot : "",
     isbn: listing.isbn ?? "",
     bookSemester: listing.bookSemester?.toString() ?? "",
     bookSubject: listing.bookSubject ?? "",
@@ -40,6 +44,10 @@ export default async function EditListingPage({ params }: PageProps<"/l/[id]/edi
       </div>
       <ListingForm
         userId={me.id}
+        collegeId={college.id}
+        base={base}
+        pickupSpots={college.pickupSpots}
+        categories={college.categories}
         listingId={listing.id}
         initial={values}
         initialPhotos={listing.photos.map((p) => ({

@@ -17,6 +17,9 @@ type Props = {
   initial: { items: ListingCardData[]; nextCursor: string | null; total: number };
   viewerId: string | null;
   now: number;
+  /** /c/<slug> */
+  base: string;
+  collegeId: string;
 };
 
 const QUICK = [
@@ -36,7 +39,7 @@ function activeFilterCount(f: SearchFilters) {
   );
 }
 
-export function Browse({ filters, initial, viewerId, now }: Props) {
+export function Browse({ filters, initial, viewerId, now, base, collegeId }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
@@ -87,6 +90,7 @@ export function Browse({ filters, initial, viewerId, now }: Props) {
     try {
       const params = filtersToQuery(filters);
       params.set("cursor", cursor);
+      params.set("college", collegeId);
       const res = await fetch(`/api/listings?${params}`);
       if (!res.ok) throw new Error(String(res.status));
       const page = (await res.json()) as { items: ListingCardData[]; nextCursor: string | null };
@@ -100,7 +104,7 @@ export function Browse({ filters, initial, viewerId, now }: Props) {
     } finally {
       setLoadingMore(false);
     }
-  }, [cursor, filters, loadingMore]);
+  }, [cursor, filters, loadingMore, collegeId]);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -206,12 +210,12 @@ export function Browse({ filters, initial, viewerId, now }: Props) {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <EmptyResults filters={filters} onClear={clearAll} />
+        <EmptyResults filters={filters} onClear={clearAll} base={base} />
       ) : (
         <>
           <div className="grid">
             {items.map((l) => (
-              <ListingCard key={l.id} listing={l} viewerId={viewerId} now={now} />
+              <ListingCard key={l.id} listing={l} viewerId={viewerId} now={now} base={base} />
             ))}
             {loadingMore ? Array.from({ length: 4 }, (_, i) => <SkeletonCard key={`sk${i}`} />) : null}
           </div>
@@ -236,7 +240,7 @@ export function Browse({ filters, initial, viewerId, now }: Props) {
       )}
 
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} labelledBy="filtersTitle">
-        <FilterSheetBody filters={filters} onApply={(next) => navigate(next)} />
+        <FilterSheetBody filters={filters} collegeId={collegeId} onApply={(next) => navigate(next)} />
       </BottomSheet>
     </>
   );
@@ -300,7 +304,7 @@ function DesktopFilters({
   );
 }
 
-function EmptyResults({ filters, onClear }: { filters: SearchFilters; onClear: () => void }) {
+function EmptyResults({ filters, onClear, base }: { filters: SearchFilters; onClear: () => void; base: string }) {
   const alertQuery = new URLSearchParams();
   if (filters.q) alertQuery.set("q", filters.q);
   if (filters.category) alertQuery.set("category", filters.category);
@@ -320,7 +324,7 @@ function EmptyResults({ filters, onClear }: { filters: SearchFilters; onClear: (
         <button className="btn btn--outline btn--sm" type="button" onClick={onClear}>
           Clear filters
         </button>
-        <Link className="btn btn--primary btn--sm" href={`/alerts?${alertQuery}`}>
+        <Link className="btn btn--primary btn--sm" href={`${base}/alerts?${alertQuery}`}>
           <Icon name="bell" />
           Alert me when it&apos;s listed
         </Link>

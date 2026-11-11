@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 import { requestPasswordReset, signIn, signUp, updatePassword } from "@/app/actions/auth";
 import { Icon } from "@/components/Icon";
+import { isPublicEmailDomain } from "@/lib/public-domains";
 import { useRouter } from "next/navigation";
 
 function TextField({
@@ -96,7 +97,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
   );
 }
 
-export function SignupForm({ domains }: { domains: string[] }) {
+export function SignupForm() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -106,7 +107,7 @@ export function SignupForm({ domains }: { domains: string[] }) {
   const [pending, start] = useTransition();
   const router = useRouter();
   const domain = email.split("@")[1]?.toLowerCase() ?? "";
-  const isCollege = domains.some((d) => domain === d || domain.endsWith(`.${d}`));
+  const personal = domain !== "" && isPublicEmailDomain(domain);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,11 +152,9 @@ export function SignupForm({ domains }: { domains: string[] }) {
         error={fields.email}
         autoComplete="email"
         hint={
-          domains.length === 0
-            ? undefined
-            : isCollege
-              ? "College email: you'll be verified once you confirm it."
-              : `Use your @${domains[0]} email to get verified and post. Any email works for browsing and chat.`
+          personal
+            ? "That's a personal email: fine for browsing. Use your college email to post and chat."
+            : "Use your college email to join your college's marketplace."
         }
       />
       <TextField id="password" label="Password" type="password" value={password} onChange={setPassword} error={fields.password} autoComplete="new-password" hint="At least 8 characters." />

@@ -23,13 +23,14 @@ export type PhotoItem = {
 
 type Props = {
   userId: string;
+  collegeId: string;
   photos: PhotoItem[];
   onChange: (update: (prev: PhotoItem[]) => PhotoItem[]) => void;
   error?: string;
 };
 
 /** Pick up to 5 photos. Each is compressed on the phone, then uploaded straight to Storage under your folder. */
-export function PhotoPicker({ userId, photos, onChange, error }: Props) {
+export function PhotoPicker({ userId, collegeId, photos, onChange, error }: Props) {
   const inputId = useId();
   const patch = (key: string, next: Partial<PhotoItem>) =>
     onChange((list) => list.map((p) => (p.key === key ? { ...p, ...next } : p)));
@@ -43,7 +44,7 @@ export function PhotoPicker({ userId, photos, onChange, error }: Props) {
     try {
       const out = await compressPhoto(file);
       patch(key, { status: "uploading", after: out.full.size, preview: URL.createObjectURL(out.thumb) });
-      const path = photoPath(userId, crypto.randomUUID(), out.type);
+      const path = photoPath(collegeId, userId, crypto.randomUUID(), out.type);
       const bucket = supabaseBrowser().storage.from("listing-photos");
       const opts = { contentType: out.type, cacheControl: "31536000", upsert: false };
       const [full, thumb] = await Promise.all([

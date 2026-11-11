@@ -14,10 +14,11 @@ type Props = {
   trigger: "link" | "menu";
   signedIn: boolean;
   afterReport?: "home" | "stay";
+  homeHref?: string;
 };
 
 /** Native <dialog>: focus trap, Esc and backdrop come for free and it works on every phone browser. */
-export function ReportDialog({ listingId, reportedUserId, label, trigger, signedIn, afterReport = "stay" }: Props) {
+export function ReportDialog({ listingId, reportedUserId, label, trigger, signedIn, afterReport = "stay", homeHref = "/" }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const router = useRouter();
   const toast = useToast();
@@ -53,7 +54,7 @@ export function ReportDialog({ listingId, reportedUserId, label, trigger, signed
         "Thanks, report sent",
         listingId ? "The listing is hidden until an admin checks it." : "An admin will take a look.",
       );
-      if (afterReport === "home") router.replace("/");
+      if (afterReport === "home") router.replace(homeHref);
       else router.refresh();
     });
   };

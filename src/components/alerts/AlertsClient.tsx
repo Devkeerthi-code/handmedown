@@ -30,7 +30,17 @@ function describe(a: Pick<AlertRow, "query" | "category" | "maxPrice" | "freeOnl
   return { what, detail: parts.filter(Boolean).join(" · ") || "any price" };
 }
 
-export function AlertsClient({ alerts, prefill }: { alerts: AlertRow[]; prefill: Prefill }) {
+export function AlertsClient({
+  alerts,
+  prefill,
+  collegeId,
+  categories,
+}: {
+  alerts: AlertRow[];
+  prefill: Prefill;
+  collegeId: string;
+  categories: string[];
+}) {
   const router = useRouter();
   const toast = useToast();
   const [query, setQuery] = useState(prefill.query ?? "");
@@ -44,7 +54,7 @@ export function AlertsClient({ alerts, prefill }: { alerts: AlertRow[]; prefill:
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
-      const result = await createAlert({
+      const result = await createAlert(collegeId, {
         query,
         category: (category || undefined) as Category | undefined,
         maxPrice: freeOnly ? undefined : maxPrice || undefined,
@@ -84,7 +94,7 @@ export function AlertsClient({ alerts, prefill }: { alerts: AlertRow[]; prefill:
     toast("Alert deleted", undefined, {
       action: "Undo",
       onAction: async () => {
-        await createAlert({ query: a.query ?? undefined, category: a.category ?? undefined, maxPrice: a.maxPrice ?? undefined, freeOnly: a.freeOnly });
+        await createAlert(collegeId, { query: a.query ?? undefined, category: a.category ?? undefined, maxPrice: a.maxPrice ?? undefined, freeOnly: a.freeOnly });
         router.refresh();
       },
     });
@@ -108,7 +118,7 @@ export function AlertsClient({ alerts, prefill }: { alerts: AlertRow[]; prefill:
           <label htmlFor="ac">Category</label>
           <select id="ac" className="select" value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">Any category</option>
-            {CATEGORIES.map((c) => (
+            {CATEGORIES.filter((c) => categories.includes(c.id)).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.label}
               </option>

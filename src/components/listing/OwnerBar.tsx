@@ -8,7 +8,7 @@ import { deleteListing, setListingStatus } from "@/app/actions/listings";
 import { useToast } from "@/components/Toast";
 import { announceStamp } from "./LiveStamp";
 
-export function OwnerBar({ id, status }: { id: string; status: ListingStatus }) {
+export function OwnerBar({ id, status, base }: { id: string; status: ListingStatus; base: string }) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
@@ -73,7 +73,7 @@ export function OwnerBar({ id, status }: { id: string; status: ListingStatus }) 
           Not sold after all? Relist it
         </button>
       )}
-      <Link className="btn btn--ghost btn--sm" href={`/l/${id}/edit`}>
+      <Link className="btn btn--ghost btn--sm" href={`${base}/l/${id}/edit`}>
         Edit details
       </Link>
       {confirming ? (

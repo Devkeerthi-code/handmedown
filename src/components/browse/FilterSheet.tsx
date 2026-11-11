@@ -26,9 +26,11 @@ export function priceRangeOf(f: Pick<SearchFilters, "min" | "max">): PriceRange 
  */
 export function FilterSheetBody({
   filters,
+  collegeId,
   onApply,
 }: {
   filters: SearchFilters;
+  collegeId: string;
   onApply: (next: Partial<SearchFilters>) => void;
 }) {
   const [draft, setDraft] = useState<SearchFilters>(filters);
@@ -39,12 +41,13 @@ export function FilterSheetBody({
     const ctrl = new AbortController();
     const params = filtersToQuery(draft);
     params.set("count", "1");
+    params.set("college", collegeId);
     fetch(`/api/listings?${params}`, { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { total?: number } | null) => setCount(d?.total ?? null))
       .catch(() => undefined);
     return () => ctrl.abort();
-  }, [draft]);
+  }, [draft, collegeId]);
 
   const set = (next: Partial<SearchFilters>) => setDraft((d) => ({ ...d, ...next }));
   const range = priceRangeOf(draft);

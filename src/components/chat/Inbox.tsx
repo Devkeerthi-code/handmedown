@@ -7,7 +7,7 @@ import { timeAgo } from "@/lib/format";
 import { photoUrl } from "@/lib/photos";
 import type { InboxItem } from "@/lib/chat/queries";
 
-export function Inbox({ items, activeId, now }: { items: InboxItem[]; activeId?: string; now: number }) {
+export function Inbox({ items, activeId, now, base }: { items: InboxItem[]; activeId?: string; now: number; base: string }) {
   const unread = items.reduce((n, i) => n + i.unread, 0);
   return (
     <section className="inbox" aria-labelledby="inboxTitle">
@@ -27,7 +27,7 @@ export function Inbox({ items, activeId, now }: { items: InboxItem[]; activeId?:
             <Illustration name="box" />
           </div>
           <p>No chats yet. Find something you like and tap “Chat with seller”.</p>
-          <Link className="btn btn--primary btn--sm" href="/#listings">
+          <Link className="btn btn--primary btn--sm" href={base}>
             Browse listings
           </Link>
         </div>
@@ -35,7 +35,7 @@ export function Inbox({ items, activeId, now }: { items: InboxItem[]; activeId?:
         <ul>
           {items.map((c) => (
             <li key={c.id} className={c.unread ? "inbox__unread" : undefined}>
-              <Link href={`/chats/${c.id}`} aria-current={c.id === activeId ? "page" : undefined}>
+              <Link href={`${base}/chats/${c.id}`} aria-current={c.id === activeId ? "page" : undefined}>
                 <span className="inbox__thumb" style={{ background: `var(--${tintFor(c.listingId)})` }}>
                   {c.coverPath ? (
                     <Image src={photoUrl(c.coverPath, "thumb")} alt="" width={44} height={44} unoptimized />

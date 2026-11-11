@@ -46,7 +46,7 @@ function mergeById(a: LocalMessage[], b: LocalMessage[]) {
   return [...map.values()].sort((x, y) => new Date(x.createdAt).getTime() - new Date(y.createdAt).getTime());
 }
 
-export function ThreadView({ thread, meId }: { thread: Thread; meId: string }) {
+export function ThreadView({ thread, meId, base }: { thread: Thread; meId: string; base: string }) {
   const router = useRouter();
   const toast = useToast();
   const [messages, setMessages] = useState<LocalMessage[]>(thread.messages);
@@ -160,7 +160,7 @@ export function ThreadView({ thread, meId }: { thread: Thread; meId: string }) {
   return (
     <section className="thread" aria-label={`Chat with ${thread.other.name}`}>
       <div className="thread__head">
-        <Link className="back" href="/chats" aria-label="Back to all chats">
+        <Link className="back" href={`${base}/chats`} aria-label="Back to all chats">
           <Icon name="left" />
         </Link>
         <span className="avatar avatar--sm" aria-hidden="true">
@@ -195,7 +195,7 @@ export function ThreadView({ thread, meId }: { thread: Thread; meId: string }) {
       </div>
 
       {l ? (
-        <Link className="pinned" href={`/l/${l.id}`}>
+        <Link className="pinned" href={`${base}/l/${l.id}`}>
           <span className="pinned__img" style={{ background: `var(--${tintFor(l.id)})` }}>
             {l.coverPath ? (
               <Image src={photoUrl(l.coverPath, "thumb")} alt="" width={52} height={52} unoptimized />

@@ -6,8 +6,10 @@ import { Icon, type IconName } from "@/components/Icon";
 
 export type NavItem = { href: string; label: string; icon: IconName; badge?: number; fab?: boolean };
 
+/** "/" and "/c/<slug>" are home links: active on themselves and on listing pages beneath them. */
 function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" || pathname.startsWith("/l/") : pathname.startsWith(href);
+  if (href === "/" || /^\/c\/[^/]+$/.test(href)) return pathname === href || pathname.startsWith(`${href}/l/`);
+  return pathname === href || pathname.startsWith(`${href}/`) || pathname.startsWith(`${href}?`);
 }
 
 export function DesktopNav({ items }: { items: NavItem[] }) {

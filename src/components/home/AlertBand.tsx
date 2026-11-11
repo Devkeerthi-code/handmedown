@@ -7,7 +7,7 @@ import { useToast } from "@/components/Toast";
 import { parseAlertPhrase } from "@/lib/alert-phrase";
 
 /** The kit's newsletter band, now a wishlist alert. "cycle under 2000" pre-fills the alert form. */
-export function AlertBand() {
+export function AlertBand({ base }: { base: string }) {
   const router = useRouter();
   const toast = useToast();
   const [value, setValue] = useState("");
@@ -25,7 +25,7 @@ export function AlertBand() {
     if (parsed.category) params.set("category", parsed.category);
     if (parsed.maxPrice) params.set("max", String(parsed.maxPrice));
     if (parsed.freeOnly) params.set("free", "1");
-    router.push(`/alerts?${params}`);
+    router.push(`${base}/alerts?${params}`);
   };
 
   return (
