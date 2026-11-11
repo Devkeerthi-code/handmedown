@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getViewer, safeNext } from "@/lib/auth";
+import { getMe, safeNext } from "@/lib/auth";
 import { LoginForm } from "@/components/auth/AuthForms";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -9,7 +9,8 @@ export const metadata: Metadata = { title: "Sign in" };
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
   const next = safeNext(typeof sp.next === "string" ? sp.next : null);
-  if (await getViewer()) redirect(next);
+  // getMe, not getViewer: a valid token whose account was deleted must still be able to sign in again.
+  if (await getMe()) redirect(next);
   return (
     <div className="container auth">
       <div className="auth__card">

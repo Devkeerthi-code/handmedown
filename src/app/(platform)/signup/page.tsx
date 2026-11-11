@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getViewer } from "@/lib/auth";
+import { getMe } from "@/lib/auth";
 import { SignupForm } from "@/components/auth/AuthForms";
 
 export const metadata: Metadata = { title: "Create an account" };
 
 export default async function SignupPage() {
-  if (await getViewer()) redirect("/account");
+  if (await getMe()) redirect("/account");
   return (
     <div className="container auth">
       <div className="auth__card">
