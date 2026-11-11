@@ -42,7 +42,7 @@ export default async function PlatformAdminPage({ searchParams }: PageProps<"/ad
       <section aria-labelledby="usageTitle">
         <h2 id="usageTitle" className="panel__title">Usage</h2>
         <div className="stat-grid">
-          <div className="stat-card"><b>{usage.people}</b><small>people have used it</small></div>
+          <div className="stat-card"><b>{usage.people}</b><small>{usage.people === 1 ? "person has" : "people have"} used it</small></div>
           <div className="stat-card"><b>{usage.last7Days}</b><small>active in the last 7 days</small></div>
           <div className="stat-card"><b>{usage.listings}</b><small>listings posted · {usage.sold} handed down</small></div>
           <div className="stat-card"><b>{colleges.filter((c) => !c.isDemo).length}</b><small>real colleges · {usage.messages} messages</small></div>

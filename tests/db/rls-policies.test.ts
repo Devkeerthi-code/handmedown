@@ -148,6 +148,14 @@ describe("private tables", () => {
     expect(p.is_demo).toBe(true);
     expect(await sql("SELECT 1 FROM app.usage_events WHERE user_id = $1", [demo.id])).toHaveLength(0);
   });
+
+  it("nothing a demo account does is counted as usage", async () => {
+    const demo = await createUser();
+    await sql(`UPDATE auth.users SET raw_app_meta_data = raw_app_meta_data || '{"hmd_demo": true}' WHERE id = $1`, [demo.id]);
+    await createListing(demo);
+    await sql("INSERT INTO app.wishlist_alerts (user_id, college_id, query) VALUES ($1, $2, 'lamp')", [demo.id, COLLEGE_A]);
+    expect(await sql("SELECT 1 FROM app.usage_events WHERE user_id = $1", [demo.id])).toHaveLength(0);
+  });
 });
 
 describe("storage bucket", () => {
