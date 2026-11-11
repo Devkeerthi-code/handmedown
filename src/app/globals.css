@@ -2,6 +2,7 @@
 @import "../styles/tokens.css";
 @import "../styles/components.css" layer(components);
 @import "../styles/app.css" layer(components);
+@import "../styles/college.css" layer(components);
 
 /* Tailwind utilities resolve to the same CSS variables, so dark mode is a variable swap. */
 @theme inline {

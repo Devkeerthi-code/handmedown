@@ -205,3 +205,42 @@ A quick search did not surface a 2025 Awwwards Site of the Day for a second-hand
 - The illustrations stand in for listing photos (to avoid using copyrighted images). Real photo uploads do work on the Sell screen.
 - Chat replies, OTP, notifications (it does call the real `Notification.requestPermission`) and admin actions are simulated in memory, and a reload resets them.
 - The college name, domain and every number, person and listing are demo data.
+
+## 7. Multi-college theming
+
+Every college gets its own marketplace at `/c/[slug]`, branded with **one accent colour** the college picks.
+The colour can be anything (white, black, neon yellow, grey), so it is never used as-is: `src/lib/theme.ts`
+derives an accessible light and dark theme from it. The rules are tested over ~220 inputs in `tests/unit/theme.test.ts`.
+
+### Derivation rules
+1. **Parse.** `#RGB` or `#RRGGBB`, with or without `#`. Anything else falls back to the platform caramel `#C88042`.
+2. **Work in OKLCH.** We only move **lightness** and keep hue and chroma (chroma is reduced only as far as needed to stay in sRGB), so a navy stays navy and a maroon stays maroon.
+3. **Fill (`--accent`).** Searches lightness outward from the input in 0.001 steps, darker first in light mode and lighter first in dark mode, until the fill is **≥ 3:1** against both `--bg` and `--surface` (non-text UI) **and** either near-black or white text reaches **≥ 4.5:1** on it. That text colour becomes `--on-accent`.
+4. **Tint (`--accent-light`).** Uses the same OKLCH lightness as the platform's `#F7E7D8` / `#2E2219`, with the college hue and a chroma that scales with the college colour (capped at 1.6× the platform tint). Greys get a half-strength warm tint. Body text stays **≥ 7:1** on it, and muted-strong stays **≥ 4.5:1**.
+5. **Ink (`--accent-ink`, also `--ring`).** Searches the same way until it is **≥ 5:1** (AA is 4.5) on bg, surface, surface-2, tag **and** the tint. It is used for links, the active nav item, kicker text and the focus ring.
+6. **`adjusted`** is true when the fill moved visibly (OKLab ΔE ≥ 0.02, about one just-noticeable difference). Caramel itself is 2.98:1 on the canvas, so it gets an invisible nudge to 3.01:1 and is not reported. The preview names the direction for each mode ("We darkened your colour slightly for light mode…") and shows before and after swatches.
+7. All checks run on the final rounded hex, so the guarantees are exact. The derivation is deterministic and takes about 2 ms.
+
+### What is college-branded and what stays HandMeDown
+- **College:** `--accent`, `--on-accent`, `--accent-ink`, `--accent-light`, `--ring` (focus ring), selection colour, native `accent-color`, the illustration accent `--ill-a`, and the monogram tile.
+- **Platform (unchanged):** `--primary` brown (primary CTAs, selected chips, sent bubbles), all neutrals, the mint, peach and rose status colours, the danger colour, type, radius, spacing and springs. A college marketplace still looks like HandMeDown, only in its own colour.
+- **Mechanism:** `themeCssVars(theme)` returns `--ca-l-*` and `--ca-d-*` properties for a `style` prop. `src/styles/college.css` maps them onto the real tokens inside any `[data-college]` element: light by default, dark via `:root[data-theme="dark"]` or `prefers-color-scheme: dark` unless the user forced light. Directory cards each carry their own `[data-college]`, so one page can show many colleges at once.
+
+### Curated swatches
+All eight pass unchanged in light mode. The deep ones are lifted in dark mode so they still read as buttons on espresso.
+
+| Name | Hex | Dark-mode fill |
+|---|---|---|
+| Caramel (platform) | `#C88042` | unchanged |
+| Brick | `#B5452B` | unchanged |
+| Maroon | `#8C1D40` | `#AE3E5B` |
+| Mustard | `#B8860B` | unchanged |
+| Forest | `#2F6B45` | `#36724B` |
+| Teal | `#1F7A8C` | unchanged |
+| Navy | `#23408E` | `#4263B4` |
+| Plum | `#6E3A8C` | `#8450A3` |
+
+### Onboarding and directory moments
+- **Pennant cards** in the directory: each college card has a notched band in its own colour, with the logo pinned across the notch. Your college is pinned first and outlined in its accent.
+- **Live preview** while creating a college: a mini header, hero, chip, count badge and sample listing re-theme on every keystroke. A Light/Dark segmented control (spring thumb) previews both modes truthfully, whatever the page theme. Accent pieces give a small spring "pop" when the colour changes, and contrast badges show the worst-case ratios for each mode.
+- **Swatch pop:** the chosen swatch springs from 0.78× to 1 on the `chip` preset. Reduced motion turns every spring into a jump.
