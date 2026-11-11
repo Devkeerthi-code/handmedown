@@ -31,10 +31,11 @@ export function validateSourceFile(file: { type: string; size: number }): Check 
 }
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const PHOTO_PATH = new RegExp(`^(${UUID})/(${UUID})\\.(webp|jpg)$`);
+const PHOTO_PATH = new RegExp(`^(${UUID})/(${UUID})/(${UUID})\\.(webp|jpg)$`);
 
-export function photoPath(userId: string, photoId: string, type: UploadType) {
-  return `${userId}/${photoId}.${type === "image/webp" ? "webp" : "jpg"}`;
+/** Photos live under <college>/<user>/ so storage policies can enforce membership of that college. */
+export function photoPath(collegeId: string, userId: string, photoId: string, type: UploadType) {
+  return `${collegeId}/${userId}/${photoId}.${type === "image/webp" ? "webp" : "jpg"}`;
 }
 
 /** The small grid version sits next to the full one: abc.webp -> abc_t.webp */
@@ -46,10 +47,12 @@ export function thumbPathOf(path: string) {
 export function validateStoredPhoto(
   object: { path: string; mimetype: string | null; size: number | null },
   userId: string,
+  collegeId: string,
 ): Check {
   const match = PHOTO_PATH.exec(object.path);
   if (!match) return { ok: false, reason: "Photo path is not in the expected format." };
-  if (match[1] !== userId) return { ok: false, reason: "That photo belongs to someone else." };
+  if (match[1] !== collegeId) return { ok: false, reason: "That photo was uploaded for another college." };
+  if (match[2] !== userId) return { ok: false, reason: "That photo belongs to someone else." };
   if (!object.mimetype || !(UPLOAD_TYPES as readonly string[]).includes(object.mimetype)) {
     return { ok: false, reason: "Photo must be WebP or JPEG after compression." };
   }

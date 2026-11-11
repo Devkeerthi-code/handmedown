@@ -12,6 +12,8 @@ import {
 const USER = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
 const PHOTO = "33333333-3333-4333-8333-333333333333";
+const COLLEGE = "44444444-4444-4444-8444-444444444444";
+const OTHER_COLLEGE = "55555555-5555-4555-8555-555555555555";
 
 describe("validateSourceFile (before compression)", () => {
   it("accepts common phone photo formats", () => {
@@ -34,27 +36,31 @@ describe("validateSourceFile (before compression)", () => {
 });
 
 describe("validateStoredPhoto (what actually reached Storage)", () => {
-  const good = { path: photoPath(USER, PHOTO, "image/webp"), mimetype: "image/webp", size: 200_000 };
+  const good = { path: photoPath(COLLEGE, USER, PHOTO, "image/webp"), mimetype: "image/webp", size: 200_000 };
 
   it("accepts a small WebP or JPEG in the owner's folder", () => {
-    expect(validateStoredPhoto(good, USER).ok).toBe(true);
-    expect(validateStoredPhoto({ ...good, path: photoPath(USER, PHOTO, "image/jpeg"), mimetype: "image/jpeg" }, USER).ok).toBe(true);
+    expect(validateStoredPhoto(good, USER, COLLEGE).ok).toBe(true);
+    expect(validateStoredPhoto({ ...good, path: photoPath(COLLEGE, USER, PHOTO, "image/jpeg"), mimetype: "image/jpeg" }, USER, COLLEGE).ok).toBe(true);
   });
 
   it("rejects someone else's photo", () => {
-    expect(validateStoredPhoto(good, OTHER)).toEqual({ ok: false, reason: "That photo belongs to someone else." });
+    expect(validateStoredPhoto(good, OTHER, COLLEGE)).toEqual({ ok: false, reason: "That photo belongs to someone else." });
+  });
+
+  it("rejects a photo uploaded under another college's folder", () => {
+    expect(validateStoredPhoto(good, USER, OTHER_COLLEGE)).toEqual({ ok: false, reason: "That photo was uploaded for another college." });
   });
 
   it("rejects wrong types and sizes", () => {
-    expect(validateStoredPhoto({ ...good, mimetype: "image/png" }, USER).ok).toBe(false);
-    expect(validateStoredPhoto({ ...good, mimetype: null }, USER).ok).toBe(false);
-    expect(validateStoredPhoto({ ...good, size: MAX_UPLOAD_BYTES + 1 }, USER).ok).toBe(false);
-    expect(validateStoredPhoto({ ...good, size: 0 }, USER).ok).toBe(false);
+    expect(validateStoredPhoto({ ...good, mimetype: "image/png" }, USER, COLLEGE).ok).toBe(false);
+    expect(validateStoredPhoto({ ...good, mimetype: null }, USER, COLLEGE).ok).toBe(false);
+    expect(validateStoredPhoto({ ...good, size: MAX_UPLOAD_BYTES + 1 }, USER, COLLEGE).ok).toBe(false);
+    expect(validateStoredPhoto({ ...good, size: 0 }, USER, COLLEGE).ok).toBe(false);
   });
 
   it("rejects paths that try to escape the folder or use odd names", () => {
-    for (const path of [`${USER}/../${OTHER}/${PHOTO}.webp`, `${USER}/${PHOTO}.png`, `${USER}/${PHOTO}_t.webp`, `${PHOTO}.webp`]) {
-      expect(validateStoredPhoto({ ...good, path }, USER).ok).toBe(false);
+    for (const path of [`${COLLEGE}/${USER}/../${OTHER}/${PHOTO}.webp`, `${COLLEGE}/${USER}/${PHOTO}.png`, `${COLLEGE}/${USER}/${PHOTO}_t.webp`, `${USER}/${PHOTO}.webp`]) {
+      expect(validateStoredPhoto({ ...good, path }, USER, COLLEGE).ok).toBe(false);
     }
   });
 });

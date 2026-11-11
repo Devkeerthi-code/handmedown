@@ -2,12 +2,20 @@ import { describe, expect, it } from "vitest";
 import { buildCountQuery, buildSearchQuery, PAGE_SIZE } from "@/lib/listings/search-sql";
 import { parseSearchFilters } from "@/lib/validation";
 
+const COLLEGE = "44444444-4444-4444-8444-444444444444";
+
 const sqlOf = (params: Record<string, string>, cursor: { v: string; id: string } | null = null, viewer: string | null = null) => {
-  const q = buildSearchQuery(parseSearchFilters(params), cursor, viewer);
+  const q = buildSearchQuery(parseSearchFilters(params), cursor, viewer, COLLEGE);
   return { text: q.text.replace(/\s+/g, " "), values: q.values };
 };
 
 describe("buildSearchQuery", () => {
+  it("is always scoped to one college, as a parameter", () => {
+    const { text, values } = sqlOf({ q: "calc", category: "books" });
+    expect(text).toMatch(/l\.college_id = \$\d+::uuid/);
+    expect(values[0]).toBe(COLLEGE);
+  });
+
   it("always hides hidden and sold listings and fetches one extra row", () => {
     const { text, values } = sqlOf({});
     expect(text).toContain("NOT l.is_hidden");
@@ -61,7 +69,8 @@ describe("buildSearchQuery", () => {
 
 it("count query shares the same WHERE", () => {
   const f = parseSearchFilters({ category: "cycles", free: "1" });
-  const count = buildCountQuery(f, null).text;
+  const count = buildCountQuery(f, null, COLLEGE).text;
+  expect(count).toContain("l.college_id = $");
   expect(count).toContain("count(*)");
   expect(count).toContain("l.category = $");
   expect(count).toContain("l.price_type = 'free'");

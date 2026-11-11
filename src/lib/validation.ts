@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { CATEGORY_IDS, CONDITION_IDS, PRICE_TYPES } from "@/lib/catalog";
-import { PICKUP_SPOTS } from "@/config/campus";
 import { normalizeIsbn } from "@/lib/isbn";
 import { MAX_PHOTOS } from "@/lib/images/rules";
 
@@ -34,7 +33,7 @@ export const listingInputSchema = z
     price: optionalInt(1, 500000, "Price"),
     originalPrice: optionalInt(1, 1000000, "Price when new"),
     exchangeFor: optionalText(80),
-    pickupSpot: z.enum(PICKUP_SPOTS, { message: "Pick a place to meet" }),
+    pickupSpot: z.string().trim().min(1, "Pick a place to meet").max(60),
     isbn: optionalText(20),
     bookSemester: optionalInt(1, 10, "Semester"),
     bookSubject: optionalText(60),
@@ -168,3 +167,57 @@ export function fieldErrors(error: z.ZodError) {
   }
   return out;
 }
+
+/** The listing must use one of its college's enabled categories and pickup spots. */
+export function checkListingAgainstCollege(
+  data: { category: string; pickupSpot: string },
+  college: { categories: string[]; pickupSpots: string[] },
+) {
+  const fields: Record<string, string> = {};
+  if (!college.categories.includes(data.category)) fields.category = "This college doesn't use that category";
+  if (!college.pickupSpots.includes(data.pickupSpot)) fields.pickupSpot = "Pick one of this college's meeting spots";
+  return fields;
+}
+
+const RESERVED_SLUGS = new Set(["admin", "api", "start", "new", "login", "signup", "account", "c", "settings", "help"]);
+
+const slugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "At least 3 characters")
+  .max(40, "40 characters max")
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Lowercase letters, numbers and single hyphens only")
+  .refine((s) => !RESERVED_SLUGS.has(s), "That address is reserved. Try another.");
+
+const spotsSchema = z
+  .array(z.string().trim().min(2, "Spot names need 2+ characters").max(60, "Keep spot names under 60 characters"))
+  .min(1, "Add at least one meeting spot")
+  .max(30, "Up to 30 meeting spots")
+  .transform((spots) => [...new Set(spots)]);
+
+const categoriesSchema = z
+  .array(z.enum(CATEGORY_IDS))
+  .min(1, "Turn on at least one category")
+  .transform((c) => [...new Set(c)]);
+
+export const accentSchema = z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, "Pick a colour").transform((s) => s.toUpperCase());
+
+export const collegeBrandingSchema = z.object({
+  name: z.string().trim().min(3, "At least 3 characters").max(80, "80 characters max"),
+  shortName: z.string().trim().min(2, "2 to 12 characters").max(12, "2 to 12 characters"),
+  accent: accentSchema,
+  pickupSpots: spotsSchema,
+  categories: categoriesSchema,
+});
+
+export const createCollegeSchema = collegeBrandingSchema.extend({ slug: slugSchema });
+export type CreateCollegeInput = z.input<typeof createCollegeSchema>;
+export type CollegeBrandingInput = z.input<typeof collegeBrandingSchema>;
+
+export const domainSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .transform((d) => d.replace(/^@/, ""))
+  .pipe(z.string().regex(/^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/, "That isn't a valid domain, e.g. iitm.ac.in"));

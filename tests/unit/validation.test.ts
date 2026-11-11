@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { alertInputSchema, filtersToQuery, listingInputSchema, parseSearchFilters, reportSchema } from "@/lib/validation";
+import {
+  alertInputSchema,
+  checkListingAgainstCollege,
+  createCollegeSchema,
+  domainSchema,
+  filtersToQuery,
+  listingInputSchema,
+  parseSearchFilters,
+  reportSchema,
+} from "@/lib/validation";
 
 const base = {
   title: "Casio fx-991ES Plus",
@@ -31,11 +40,10 @@ describe("listingInputSchema", () => {
     expect(ex.exchangeFor).toBe("A drafter");
   });
 
-  it("rejects silly prices and unknown pickup spots", () => {
+  it("rejects silly prices", () => {
     expect(listingInputSchema.safeParse({ ...base, price: "-5" }).success).toBe(false);
     expect(listingInputSchema.safeParse({ ...base, price: "12.5" }).success).toBe(false);
     expect(listingInputSchema.safeParse({ ...base, price: "9999999" }).success).toBe(false);
-    expect(listingInputSchema.safeParse({ ...base, pickupSpot: "My room" }).success).toBe(false);
   });
 
   it("keeps book fields only for books and normalises the ISBN", () => {
@@ -91,4 +99,41 @@ it("reportSchema needs a target and a known reason", () => {
   expect(reportSchema.safeParse({ reason: "scam" }).success).toBe(false);
   expect(reportSchema.safeParse({ listingId: "11111111-1111-4111-8111-111111111111", reason: "nope" }).success).toBe(false);
   expect(reportSchema.safeParse({ listingId: "11111111-1111-4111-8111-111111111111", reason: "scam" }).success).toBe(true);
+});
+
+describe("per-college rules", () => {
+  const college = { categories: ["books", "cycles"], pickupSpots: ["Central Library", "Main Gate"] };
+
+  it("only accepts the college's own categories and meeting spots", () => {
+    expect(checkListingAgainstCollege({ category: "books", pickupSpot: "Main Gate" }, college)).toEqual({});
+    expect(checkListingAgainstCollege({ category: "hostel", pickupSpot: "My room" }, college)).toEqual({
+      category: expect.any(String),
+      pickupSpot: expect.any(String),
+    });
+  });
+
+  it("validates college setup input", () => {
+    const ok = createCollegeSchema.safeParse({
+      name: "National Institute of Technology Calicut",
+      shortName: "NITC",
+      slug: "NITC",
+      accent: "#1f7a8c",
+      pickupSpots: ["Main gate", "Main gate", "Library"],
+      categories: ["books", "books"],
+    });
+    expect(ok.success).toBe(true);
+    expect(ok.data).toMatchObject({ slug: "nitc", accent: "#1F7A8C", pickupSpots: ["Main gate", "Library"], categories: ["books"] });
+
+    for (const slug of ["ad", "admin", "no spaces", "trailing-", "UPPER_case"]) {
+      expect(createCollegeSchema.safeParse({ ...ok.data, slug }).success).toBe(false);
+    }
+    expect(createCollegeSchema.safeParse({ ...ok.data, accent: "teal" }).success).toBe(false);
+    expect(createCollegeSchema.safeParse({ ...ok.data, pickupSpots: [] }).success).toBe(false);
+    expect(createCollegeSchema.safeParse({ ...ok.data, categories: [] }).success).toBe(false);
+  });
+
+  it("normalises and validates email domains", () => {
+    expect(domainSchema.parse(" @CSE.NITC.ac.in ")).toBe("cse.nitc.ac.in");
+    for (const bad of ["nitc", "nitc..ac.in", "-nitc.ac.in", "nitc.ac.in/x"]) expect(domainSchema.safeParse(bad).success).toBe(false);
+  });
 });

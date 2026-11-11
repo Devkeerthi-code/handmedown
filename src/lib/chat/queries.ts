@@ -127,6 +127,7 @@ export async function getThread(viewer: Viewer, conversationId: string) {
     const other = conversation.buyerId === viewer.id ? conversation.seller : conversation.buyer;
     return {
       id: conversation.id,
+      collegeId: conversation.collegeId,
       iAmSeller: conversation.sellerId === viewer.id,
       other: { id: other.id, name: other.displayName, verified: other.verifiedAt !== null },
       listing: listing

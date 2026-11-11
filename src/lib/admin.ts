@@ -2,10 +2,14 @@ import "server-only";
 import { db } from "@/lib/db/client";
 import { withRls, type Viewer } from "@/lib/db/rls";
 
-export async function getReports(admin: Viewer, status: "open" | "closed") {
+/** RLS decides what each viewer may see: college staff get their college, the platform admin gets all. */
+export async function getReports(admin: Viewer, status: "open" | "closed", collegeId: string | null) {
   return withRls(admin, (tx) =>
     tx.report.findMany({
-      where: status === "open" ? { status: "open" } : { status: { not: "open" } },
+      where: {
+        ...(collegeId ? { collegeId } : {}),
+        ...(status === "open" ? { status: "open" as const } : { status: { not: "open" as const } }),
+      },
       orderBy: { createdAt: "desc" },
       take: 100,
       select: {
@@ -15,6 +19,7 @@ export async function getReports(admin: Viewer, status: "open" | "closed") {
         status: true,
         createdAt: true,
         resolvedAt: true,
+        college: { select: { slug: true, shortName: true } },
         reporter: { select: { displayName: true } },
         reportedUser: { select: { id: true, displayName: true, bannedAt: true } },
         listing: {

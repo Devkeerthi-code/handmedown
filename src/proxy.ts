@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const SIGNED_IN_ONLY = /^\/(sell|chats|alerts|account|admin)(\/|$)|^\/l\/[^/]+\/edit$/;
+const SIGNED_IN_ONLY =
+  /^\/(account|admin)(\/|$)|^\/c\/[^/]+\/(sell|chats|alerts|admin)(\/|$)|^\/c\/[^/]+\/l\/[^/]+\/edit$/;
 
 /**
  * Refreshes the Supabase session cookie on every page request so Server

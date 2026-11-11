@@ -75,9 +75,10 @@ export async function searchListingsTx(
   filters: SearchFilters,
   cursor: Cursor | null,
   viewerId: string | null,
+  collegeId: string,
   limit = PAGE_SIZE,
 ): Promise<ListingPage> {
-  const rows = await tx.$queryRaw<Row[]>(buildSearchQuery(filters, cursor, viewerId, limit));
+  const rows = await tx.$queryRaw<Row[]>(buildSearchQuery(filters, cursor, viewerId, collegeId, limit));
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
   const last = page[page.length - 1];
@@ -87,22 +88,22 @@ export async function searchListingsTx(
   };
 }
 
-export function searchListings(viewer: Viewer | null, filters: SearchFilters, cursor: Cursor | null) {
-  return withRls(viewer, (tx) => searchListingsTx(tx, filters, cursor, viewer?.id ?? null));
+export function searchListings(viewer: Viewer | null, collegeId: string, filters: SearchFilters, cursor: Cursor | null) {
+  return withRls(viewer, (tx) => searchListingsTx(tx, filters, cursor, viewer?.id ?? null, collegeId));
 }
 
-export async function countListings(viewer: Viewer | null, filters: SearchFilters) {
+export async function countListings(viewer: Viewer | null, collegeId: string, filters: SearchFilters) {
   const rows = await withRls(viewer, (tx) =>
-    tx.$queryRaw<{ n: number }[]>(buildCountQuery(filters, viewer?.id ?? null)),
+    tx.$queryRaw<{ n: number }[]>(buildCountQuery(filters, viewer?.id ?? null, collegeId)),
   );
   return rows[0]?.n ?? 0;
 }
 
 /** First page + total, in one transaction, for the home page server render. */
-export function firstPage(viewer: Viewer | null, filters: SearchFilters) {
+export function firstPage(viewer: Viewer | null, collegeId: string, filters: SearchFilters) {
   return withRls(viewer, async (tx) => {
-    const page = await searchListingsTx(tx, filters, null, viewer?.id ?? null);
-    const [count] = await tx.$queryRaw<{ n: number }[]>(buildCountQuery(filters, viewer?.id ?? null));
+    const page = await searchListingsTx(tx, filters, null, viewer?.id ?? null, collegeId);
+    const [count] = await tx.$queryRaw<{ n: number }[]>(buildCountQuery(filters, viewer?.id ?? null, collegeId));
     return { ...page, total: count?.n ?? 0 };
   });
 }
@@ -159,29 +160,29 @@ export async function getMyListings(viewer: Viewer) {
   return withRls(viewer, (tx) =>
     tx.listing.findMany({
       where: { sellerId: viewer.id },
+      include: { college: { select: { slug: true, shortName: true } }, photos: { orderBy: { position: "asc" }, take: 1 } },
       orderBy: { createdAt: "desc" },
       take: 50,
-      include: { photos: { orderBy: { position: "asc" }, take: 1 } },
     }),
   );
 }
 
 export type CampusStats = { live: number; handedDown: number; verified: number };
 
-/** Honest live numbers for the hero. Demo data is excluded. */
-export async function getCampusStats(): Promise<CampusStats> {
+/** Honest live numbers for a college hero. Demo listings and accounts are excluded. */
+export async function getCampusStats(collegeId: string): Promise<CampusStats> {
   const [live, handedDown, verified] = await Promise.all([
-    db.listing.count({ where: { isHidden: false, isDemo: false, status: { not: "sold" } } }),
-    db.listing.count({ where: { isDemo: false, status: "sold" } }),
-    db.profile.count({ where: { isDemo: false, verifiedAt: { not: null }, bannedAt: null } }),
+    db.listing.count({ where: { collegeId, isHidden: false, isDemo: false, status: { not: "sold" } } }),
+    db.listing.count({ where: { collegeId, isDemo: false, status: "sold" } }),
+    db.profile.count({ where: { collegeId, isDemo: false, bannedAt: null } }),
   ]);
   return { live, handedDown, verified };
 }
 
-export async function getCategoryCounts(): Promise<Partial<Record<Category, number>>> {
+export async function getCategoryCounts(collegeId: string): Promise<Partial<Record<Category, number>>> {
   const rows = await db.listing.groupBy({
     by: ["category"],
-    where: { isHidden: false, status: { not: "sold" } },
+    where: { collegeId, isHidden: false, status: { not: "sold" } },
     _count: { _all: true },
   });
   return Object.fromEntries(rows.map((r) => [r.category, r._count._all]));

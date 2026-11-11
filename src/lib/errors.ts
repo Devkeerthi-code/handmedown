@@ -15,6 +15,8 @@ const RATE_LIMIT_MESSAGES: Record<string, string> = {
   conversations: "You've started a lot of chats today. Try again tomorrow.",
   reports: "You've sent a lot of reports today. Our admins will get to them.",
   alerts: "You can keep up to 10 alerts. Delete one to add another.",
+  colleges: "You've set up the limit of colleges for today. Try again tomorrow.",
+  domains: "This college already has 5 domains waiting for approval.",
 };
 
 /** Collects the message from an error and its causes (Prisma driver adapters nest the Postgres error). */
@@ -41,7 +43,10 @@ export function friendlyError(error: unknown): string {
   const msg = fullMessage(error);
   const rate = /RATE_LIMIT:(\w+)/.exec(msg);
   if (rate) return RATE_LIMIT_MESSAGES[rate[1]] ?? "Slow down a little and try again.";
-  if (/row-level security|permission denied|42501|Only an admin/i.test(msg)) {
+  if (/CROSS_COLLEGE/.test(msg)) return "That belongs to a different college.";
+  if (/CATEGORY_NOT_ENABLED/.test(msg)) return "This college doesn't use that category.";
+  if (/UNKNOWN_PICKUP_SPOT/.test(msg)) return "Pick one of this college's meeting spots.";
+  if (/row-level security|permission denied|42501|Only an admin|Only the platform admin/i.test(msg)) {
     return "You're not allowed to do that.";
   }
   if (/duplicate key|unique constraint|P2002/i.test(msg)) return "That's already been done.";

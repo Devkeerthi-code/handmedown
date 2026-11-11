@@ -4,6 +4,7 @@ import { decodeCursor } from "@/lib/cursor";
 import { logError } from "@/lib/errors";
 import { countListings, searchListings } from "@/lib/listings/queries";
 import { parseSearchFilters } from "@/lib/validation";
+import { z } from "zod";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
 
@@ -14,14 +15,16 @@ const NO_STORE = { "Cache-Control": "private, no-store" };
 export async function GET(request: NextRequest) {
   const params = Object.fromEntries(request.nextUrl.searchParams);
   const filters = parseSearchFilters(params);
+  const college = z.string().uuid().safeParse(params.college);
+  if (!college.success) return NextResponse.json({ error: "Missing college" }, { status: 400, headers: NO_STORE });
   try {
     const viewer = await getViewer();
     if (params.count === "1") {
-      return NextResponse.json({ total: await countListings(viewer, filters) }, { headers: NO_STORE });
+      return NextResponse.json({ total: await countListings(viewer, college.data, filters) }, { headers: NO_STORE });
     }
     const cursor = decodeCursor(params.cursor);
     if (params.cursor && !cursor) return NextResponse.json({ error: "Bad cursor" }, { status: 400 });
-    const page = await searchListings(viewer, filters, cursor);
+    const page = await searchListings(viewer, college.data, filters, cursor);
     return NextResponse.json(page, { headers: NO_STORE });
   } catch (error) {
     logError("api/listings", error);

@@ -2,23 +2,24 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getMe } from "@/lib/auth";
+import { getMe, isMemberOf } from "@/lib/auth";
 import { withRls } from "@/lib/db/rls";
 import { fail, friendlyError, logError, ok, type ActionResult } from "@/lib/errors";
 import { alertInputSchema, fieldErrors, type AlertInput } from "@/lib/validation";
 
 const uuid = z.string().uuid();
 
-export async function createAlert(input: AlertInput): Promise<ActionResult<{ id: string }>> {
+export async function createAlert(collegeId: string, input: AlertInput): Promise<ActionResult<{ id: string }>> {
   const me = await getMe();
   if (!me) return fail("Sign in to create alerts.");
+  if (!isMemberOf(me, collegeId)) return fail("Only verified students of this college can set alerts here.");
   const parsed = alertInputSchema.safeParse(input);
   if (!parsed.success) return fail("Some details need fixing.", fieldErrors(parsed.error));
   try {
     const alert = await withRls(me, (tx) =>
-      tx.wishlistAlert.create({ data: { ...parsed.data, userId: me.id }, select: { id: true } }),
+      tx.wishlistAlert.create({ data: { ...parsed.data, userId: me.id, collegeId }, select: { id: true } }),
     );
-    revalidatePath("/alerts");
+    revalidatePath("/c/[slug]/alerts", "page");
     return ok({ id: alert.id });
   } catch (error) {
     logError("createAlert", error);
@@ -31,7 +32,7 @@ export async function setAlertActive(id: string, active: boolean): Promise<Actio
   if (!me || !uuid.safeParse(id).success) return fail("Sign in first.");
   try {
     await withRls(me, (tx) => tx.wishlistAlert.updateMany({ where: { id, userId: me.id }, data: { active: Boolean(active) } }));
-    revalidatePath("/alerts");
+    revalidatePath("/c/[slug]/alerts", "page");
     return ok(null);
   } catch (error) {
     logError("setAlertActive", error);
@@ -44,7 +45,7 @@ export async function deleteAlert(id: string): Promise<ActionResult> {
   if (!me || !uuid.safeParse(id).success) return fail("Sign in first.");
   try {
     await withRls(me, (tx) => tx.wishlistAlert.deleteMany({ where: { id, userId: me.id } }));
-    revalidatePath("/alerts");
+    revalidatePath("/c/[slug]/alerts", "page");
     return ok(null);
   } catch (error) {
     logError("deleteAlert", error);

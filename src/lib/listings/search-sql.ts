@@ -19,8 +19,12 @@ const SORT: Record<Sort, { key: Prisma.Sql; dir: "ASC" | "DESC" }> = {
 };
 
 /** The WHERE clause shared by the page query and the result count. */
-export function buildWhere(filters: SearchFilters, viewerId: string | null): Prisma.Sql {
-  const where: Prisma.Sql[] = [Prisma.sql`NOT l.is_hidden`, Prisma.sql`l.status <> 'sold'`];
+export function buildWhere(filters: SearchFilters, viewerId: string | null, collegeId: string): Prisma.Sql {
+  const where: Prisma.Sql[] = [
+    Prisma.sql`l.college_id = ${collegeId}::uuid`,
+    Prisma.sql`NOT l.is_hidden`,
+    Prisma.sql`l.status <> 'sold'`,
+  ];
 
   if (filters.category) where.push(Prisma.sql`l.category = ${filters.category}::app."Category"`);
   if (filters.condition) where.push(Prisma.sql`l.condition = ${filters.condition}::app."Condition"`);
@@ -66,13 +70,14 @@ export function buildSearchQuery(
   filters: SearchFilters,
   cursor: Cursor | null,
   viewerId: string | null,
+  collegeId: string,
   limit = PAGE_SIZE,
 ): Prisma.Sql {
   const { key, dir } = SORT[filters.sort];
   const direction = Prisma.raw(dir);
   const where = cursor
-    ? Prisma.sql`${buildWhere(filters, viewerId)} AND ${cursorClause(filters.sort, cursor)}`
-    : buildWhere(filters, viewerId);
+    ? Prisma.sql`${buildWhere(filters, viewerId, collegeId)} AND ${cursorClause(filters.sort, cursor)}`
+    : buildWhere(filters, viewerId, collegeId);
   // created_at goes out as text so the cursor keeps Postgres' microsecond precision.
   return Prisma.sql`
     SELECT l.id, l.title, l.category::text AS category, l.condition::text AS condition,
@@ -90,6 +95,6 @@ export function buildSearchQuery(
     LIMIT ${limit + 1}`;
 }
 
-export function buildCountQuery(filters: SearchFilters, viewerId: string | null): Prisma.Sql {
-  return Prisma.sql`SELECT count(*)::int AS n FROM app.listings l WHERE ${buildWhere(filters, viewerId)}`;
+export function buildCountQuery(filters: SearchFilters, viewerId: string | null, collegeId: string): Prisma.Sql {
+  return Prisma.sql`SELECT count(*)::int AS n FROM app.listings l WHERE ${buildWhere(filters, viewerId, collegeId)}`;
 }

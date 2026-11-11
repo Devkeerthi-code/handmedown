@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getMe, safeNext } from "@/lib/auth";
-import { db } from "@/lib/db/client";
+import { collegeForDomain } from "@/lib/college";
+import { emailDomain, isPublicEmailDomain } from "@/lib/public-domains";
 import { withRls } from "@/lib/db/rls";
 import { fail, friendlyError, logError, ok, type ActionResult } from "@/lib/errors";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -84,35 +85,30 @@ export async function updatePassword(password: string): Promise<ActionResult> {
   return ok(null);
 }
 
-async function domainAllowed(email: string) {
-  const domain = email.split("@")[1]?.toLowerCase() ?? "";
-  const domains = await db.allowedDomain.findMany({ select: { domain: true } });
-  return domains.some((d) => domain === d.domain || domain.endsWith(`.${d.domain}`));
-}
-
-export async function allowedDomains(): Promise<string[]> {
-  const rows = await db.allowedDomain.findMany({ select: { domain: true }, orderBy: { domain: "asc" } });
-  return rows.map((r) => r.domain);
-}
-
-/** Moves the account to a college email. Supabase emails a confirmation link; the badge appears once it's clicked. */
-export async function verifyCollegeEmail(email: string): Promise<ActionResult> {
+/**
+ * Joining or transferring = switching the account to a college email. Supabase sends a confirmation
+ * link; once it's clicked, the database trigger makes you a member of the college that owns that domain.
+ */
+export async function verifyCollegeEmail(
+  email: string,
+): Promise<ActionResult<{ collegeName: string | null; domain: string }>> {
   const me = await getMe();
   if (!me) return fail("Sign in first.");
   const parsed = emailSchema.safeParse(email);
   if (!parsed.success) return fail(parsed.error.issues[0].message, { email: parsed.error.issues[0].message });
-  if (!(await domainAllowed(parsed.data))) {
-    const list = (await allowedDomains()).map((d) => `@${d}`).join(" or ");
-    const msg = list ? `Use your college email (${list}).` : "College email verification isn't set up yet.";
+  const domain = emailDomain(parsed.data);
+  if (isPublicEmailDomain(domain)) {
+    const msg = "That's a personal email. Use the one your college gave you.";
     return fail(msg, { email: msg });
   }
+  const owner = await collegeForDomain(domain);
   const supabase = await createSupabaseServer();
   const { error } = await supabase.auth.updateUser(
     { email: parsed.data },
     { emailRedirectTo: `${await siteOrigin()}/auth/callback?next=/account` },
   );
   if (error) return fail(authMessage(error.message));
-  return ok(null);
+  return ok({ collegeName: owner?.status === "active" ? owner.college.name : null, domain });
 }
 
 export async function updateDisplayName(name: string): Promise<ActionResult> {

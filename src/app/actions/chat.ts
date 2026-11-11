@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { getMe } from "@/lib/auth";
+import { getMe, isMemberOf } from "@/lib/auth";
 import { withRls } from "@/lib/db/rls";
 import { fail, friendlyError, logError, ok, type ActionResult } from "@/lib/errors";
 import { messageSchema } from "@/lib/validation";
@@ -17,8 +17,12 @@ export async function startConversation(listingId: string): Promise<ActionResult
   if (!uuid.safeParse(listingId).success) return fail("That listing doesn't exist.");
   try {
     const id = await withRls(me, async (tx) => {
-      const listing = await tx.listing.findUnique({ where: { id: listingId }, select: { sellerId: true, status: true } });
+      const listing = await tx.listing.findUnique({
+        where: { id: listingId },
+        select: { sellerId: true, status: true, collegeId: true },
+      });
       if (!listing) throw new Error("permission denied: listing not visible");
+      if (!isMemberOf(me, listing.collegeId)) throw new Error("not a member");
       if (listing.sellerId === me.id) throw new Error("own listing");
       const existing = await tx.conversation.findUnique({
         where: { listingId_buyerId: { listingId, buyerId: me.id } },
@@ -27,7 +31,7 @@ export async function startConversation(listingId: string): Promise<ActionResult
       if (existing) return existing.id;
       if (listing.status === "sold") throw new Error("permission denied: sold");
       const created = await tx.conversation.create({
-        data: { listingId, buyerId: me.id, sellerId: listing.sellerId },
+        data: { listingId, buyerId: me.id, sellerId: listing.sellerId, collegeId: listing.collegeId },
         select: { id: true },
       });
       return created.id;
@@ -35,6 +39,12 @@ export async function startConversation(listingId: string): Promise<ActionResult
     return ok({ id });
   } catch (error) {
     if (error instanceof Error && error.message === "own listing") return fail("This is your own listing.");
+    if (error instanceof Error && error.message === "not a member") {
+      return fail("Only verified students of this college can chat here. Verify your college email in your account.");
+    }
+    if (error instanceof Error && /CROSS_COLLEGE/.test(error.message + String(error.cause))) {
+      return fail("This seller is no longer a member of this college.");
+    }
     logError("startConversation", error);
     return fail(friendlyError(error));
   }
@@ -83,8 +93,7 @@ export async function blockUser(userId: string): Promise<ActionResult> {
     await withRls(me, (tx) => tx.$executeRaw`
       INSERT INTO app.blocks (blocker_id, blocked_id) VALUES (${me.id}::uuid, ${userId}::uuid)
       ON CONFLICT DO NOTHING`);
-    revalidatePath("/chats", "layout");
-    revalidatePath("/");
+    revalidatePath("/c/[slug]", "layout");
     return ok(null);
   } catch (error) {
     logError("blockUser", error);
@@ -98,8 +107,7 @@ export async function unblockUser(userId: string): Promise<ActionResult> {
   if (!uuid.safeParse(userId).success) return fail("Can't unblock that account.");
   try {
     await withRls(me, (tx) => tx.block.deleteMany({ where: { blockerId: me.id, blockedId: userId } }));
-    revalidatePath("/chats", "layout");
-    revalidatePath("/");
+    revalidatePath("/c/[slug]", "layout");
     return ok(null);
   } catch (error) {
     logError("unblockUser", error);
