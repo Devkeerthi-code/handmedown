@@ -1,0 +1,56 @@
+/* Styles for screens the concept didn't cover (auth, account, real photos). Same tokens, same rules. */
+
+.card__img img,
+.gallery__slide img,
+.pinned__img img,
+.rep-item__img img,
+.thumbs img,
+.inbox__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card__img > img { position: absolute; inset: 0; }
+.card--sold .card__img > img,
+.card--reserved .card__img > img { opacity: .55; filter: grayscale(.35); }
+.gallery__slide--photo { padding: 0; }
+.gallery__slide--photo img { pointer-events: none; -webkit-user-drag: none; }
+.thumbs button { overflow: hidden; }
+.thumbs button img { border-radius: 6px; }
+.pinned__img, .rep-item__img { overflow: hidden; }
+.pinned__img:has(img), .rep-item__img:has(img) { padding: 0; }
+
+.auth { min-height: calc(100dvh - var(--topbar-h) - var(--tabbar-h)); display: grid; place-items: center; padding-block: var(--s6); }
+.auth__card { width: 100%; max-width: 420px; display: grid; gap: var(--s5); }
+.auth__card .panel { display: grid; gap: var(--s4); }
+.auth__card h1 { font-size: var(--fs-title); }
+.auth__card .lede { color: var(--muted); font-size: var(--fs-sm); }
+.auth__switch { text-align: center; font-size: var(--fs-sm); color: var(--muted); }
+.notice { display: flex; gap: var(--s2); align-items: start; padding: var(--s3) var(--s4); border-radius: var(--r-md); font-size: var(--fs-sm); background: var(--mint-bg); color: var(--mint-ink); }
+.notice--warn { background: var(--accent-light); color: var(--accent-ink); }
+.notice--error { background: var(--rose-bg); color: var(--rose-ink); }
+.notice .ic { width: 18px; height: 18px; margin-top: 1px; }
+
+.account { display: grid; gap: var(--s5); max-width: 860px; margin-inline: auto; }
+.mine { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s2); }
+.mine li a { display: grid; grid-template-columns: 56px 1fr auto; gap: var(--s3); align-items: center; padding: var(--s2) var(--s3) var(--s2) var(--s2); border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); }
+.mine li a:hover { background: var(--surface-2); }
+.mine__img { width: 56px; height: 56px; border-radius: var(--r-sm); overflow: hidden; padding: 6px; }
+.mine__img:has(img) { padding: 0; }
+.mine b { display: block; font-size: var(--fs-sm); color: var(--heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mine small { font-size: var(--fs-cap); color: var(--muted); }
+
+.dialog { border: 0; padding: 0; background: transparent; max-width: min(480px, calc(100vw - 32px)); width: 100%; color: var(--text); }
+.dialog::backdrop { background: var(--scrim); }
+.dialog__panel { background: var(--surface); border-radius: var(--r-xl); padding: var(--s5); display: grid; gap: var(--s4); box-shadow: var(--shadow-3); }
+.dialog__panel h2 { font-size: var(--fs-subtitle); }
+
+.inbox__thumb { width: 44px; height: 44px; border-radius: var(--r-sm); overflow: hidden; padding: 4px; }
+.inbox__thumb:has(img) { padding: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+@media (min-width: 760px) { .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--s4); }
+.stat-card b { display: block; font-size: 1.5rem; color: var(--heading); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.stat-card small { font-size: var(--fs-cap); color: var(--muted); }
+.not-verified { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-cap); color: var(--muted); }
+.route-progress { position: fixed; top: 0; left: 0; height: 2px; z-index: 70; background: var(--accent); transform-origin: left; }

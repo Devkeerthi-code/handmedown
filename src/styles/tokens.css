@@ -1,0 +1,117 @@
+/* Design tokens from the Figma "Handmade Shop" kit, with contrast fixes (see docs/DESIGN.md). */
+/* ---------- Tokens: light (default) ---------- */
+:root {
+  color-scheme: light;
+  /* Kit palette, unchanged hex */
+  --primary: #483724;        /* headings, primary CTA, footer */
+  --accent: #C88042;         /* fills only: alt CTA, active bars, ratings, stamps */
+  --accent-light: #F7E7D8;   /* hero, alert band, icon tiles */
+  --bg: #FCF7F0;             /* canvas */
+  --surface: #FFFFFF;        /* navbar, cards, inputs */
+  --text: #261E17;
+  --muted: #736960;          /* on canvas / white only (5.0:1+) */
+  --border: #E0D8D0;         /* decorative dividers only */
+  --tag: #E6DCD2;
+  /* Upgrade tokens (contrast + states) */
+  --heading: #483724;
+  --on-primary: #FFFFFF;
+  --accent-ink: #8F531F;     /* accent used AS TEXT: 5.7:1 on canvas, 5.1:1 on accent-light */
+  --on-accent: #261E17;      /* text on caramel fill: 5.2:1 (white was 3.2:1) */
+  --muted-strong: #6B5F55;   /* muted text on tinted fills (accent-light / tag) */
+  --border-strong: #958779;  /* input & control outlines: 3.5:1 on white */
+  --surface-2: #F6EFE6;
+  --mint-bg: #E3F3EA; --mint-ink: #1E6B4A;
+  --peach-bg: #FBE4D3; --peach-ink: #9A4B1E;
+  --rose-bg: #F8DEDA; --rose-ink: #8A3B2E;
+  --danger: #B42318;
+  --banner: #483724; --banner-ink: #FCF7F0; --banner-muted: #F7E7D8;
+  --footer: #483724;
+  --scrim: rgba(38, 30, 23, .42);
+  --ill-line: #483724; --ill-a: #C88042; --ill-b: #FFFFFF; --ill-c: #E6DCD2;
+  --t1: linear-gradient(160deg, #F6E6D3, #EBD2B5);
+  --t2: linear-gradient(160deg, #F1E9DE, #DFCFBC);
+  --t3: linear-gradient(160deg, #F7E3D8, #EBC8B2);
+  --t4: linear-gradient(160deg, #ECE7D9, #D9D0B8);
+  --t5: linear-gradient(160deg, #F2E6E1, #E0CCC3);
+  --shadow-1: 0 1px 2px rgba(72, 55, 36, .06);
+  --shadow-2: 0 1px 2px rgba(72, 55, 36, .06), 0 10px 28px -14px rgba(72, 55, 36, .28);
+  --shadow-3: 0 2px 6px rgba(72, 55, 36, .08), 0 24px 48px -20px rgba(72, 55, 36, .35);
+
+  /* Type: Inter, kit scale */
+  --font: var(--font-inter), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-display: clamp(2.25rem, 1.05rem + 4.6vw, 4rem);  /* 36 -> 64 */
+  --fs-title: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);      /* 24 -> 32 */
+  --fs-subtitle: 1.25rem;  /* 20 */
+  --fs-body: 1rem;         /* 16 */
+  --fs-sm: .875rem;        /* 14 */
+  --fs-price: 1.25rem;     /* 20 */
+  --fs-cap: .75rem;        /* 12 */
+  --fs-badge: .6875rem;    /* 11 */
+
+  /* Spacing: 4/8 scale */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+  /* Radius */
+  --r-xs: 6px; --r-sm: 10px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-pill: 999px;
+  /* Motion: CSS transitions stay under 200ms; physics lives in spring.js */
+  --dur-1: 120ms; --dur-2: 180ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+
+  --topbar-h: 64px;
+  --tabbar-h: 64px;
+}
+
+/* ---------- Tokens: dark (warm espresso, not grey) ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #F0DFCC; --on-primary: #211913;
+  --accent: #C88042; --accent-ink: #E3A96F; --on-accent: #17110C;
+  --accent-light: #2E2219;
+  --bg: #17110C; --surface: #211913; --surface-2: #2B2119;
+  --text: #F3E9DD; --heading: #F3E9DD;
+  --muted: #B5A493; --muted-strong: #B5A493;
+  --border: #3A2D22; --border-strong: #85715F; --tag: #33261B;
+  --mint-bg: #1F2A22; --mint-ink: #9FD8B8;
+  --peach-bg: #3A2819; --peach-ink: #F0C29B;
+  --rose-bg: #3A221E; --rose-ink: #F2A39A;
+  --danger: #F2A39A;
+  --banner: #2E2219; --banner-ink: #F3E9DD; --banner-muted: #D7C6B4;
+  --footer: #100B08;
+  --scrim: rgba(0, 0, 0, .6);
+  --ill-line: #EBDCCB; --ill-a: #C88042; --ill-b: #3A2C21; --ill-c: #4A3929;
+  --t1: linear-gradient(160deg, #33251A, #2A1E15);
+  --t2: linear-gradient(160deg, #30261D, #261D16);
+  --t3: linear-gradient(160deg, #36241B, #2B1C15);
+  --t4: linear-gradient(160deg, #2E2A1E, #242017);
+  --t5: linear-gradient(160deg, #33261F, #281D18);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, .35), 0 12px 28px -14px rgba(0, 0, 0, .6);
+  --shadow-3: 0 2px 6px rgba(0, 0, 0, .4), 0 24px 48px -20px rgba(0, 0, 0, .7);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --primary: #F0DFCC; --on-primary: #211913;
+    --accent: #C88042; --accent-ink: #E3A96F; --on-accent: #17110C;
+    --accent-light: #2E2219;
+    --bg: #17110C; --surface: #211913; --surface-2: #2B2119;
+    --text: #F3E9DD; --heading: #F3E9DD;
+    --muted: #B5A493; --muted-strong: #B5A493;
+    --border: #3A2D22; --border-strong: #85715F; --tag: #33261B;
+    --mint-bg: #1F2A22; --mint-ink: #9FD8B8;
+    --peach-bg: #3A2819; --peach-ink: #F0C29B;
+    --rose-bg: #3A221E; --rose-ink: #F2A39A;
+    --danger: #F2A39A;
+    --banner: #2E2219; --banner-ink: #F3E9DD; --banner-muted: #D7C6B4;
+    --footer: #100B08;
+    --scrim: rgba(0, 0, 0, .6);
+    --ill-line: #EBDCCB; --ill-a: #C88042; --ill-b: #3A2C21; --ill-c: #4A3929;
+    --t1: linear-gradient(160deg, #33251A, #2A1E15);
+    --t2: linear-gradient(160deg, #30261D, #261D16);
+    --t3: linear-gradient(160deg, #36241B, #2B1C15);
+    --t4: linear-gradient(160deg, #2E2A1E, #242017);
+    --t5: linear-gradient(160deg, #33261F, #281D18);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
+    --shadow-2: 0 1px 2px rgba(0, 0, 0, .35), 0 12px 28px -14px rgba(0, 0, 0, .6);
+    --shadow-3: 0 2px 6px rgba(0, 0, 0, .4), 0 24px 48px -20px rgba(0, 0, 0, .7);
+  }
+}
