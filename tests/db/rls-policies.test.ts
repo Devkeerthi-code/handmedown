@@ -123,7 +123,7 @@ describe("private tables", () => {
     const me = await createUser();
     const other = await createUser();
     await sql("INSERT INTO app.wishlist_alerts (user_id, college_id, query) VALUES ($1, $2, 'cycle')", [other.id, COLLEGE_A]);
-    await sql("INSERT INTO app.push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ($1, https://push.example/x, kkkkkkkkkkkkkkkkkkkk, aaaaaaaaaa)", [other.id]);
+    await sql("INSERT INTO app.push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ($1, 'https://push.example/x', 'kkkkkkkkkkkkkkkkkkkk', 'aaaaaaaaaa')", [other.id]);
     await as(me);
     expect(await sql("SELECT id FROM app.wishlist_alerts")).toHaveLength(0);
     expect(await sql("SELECT id FROM app.push_subscriptions")).toHaveLength(0);

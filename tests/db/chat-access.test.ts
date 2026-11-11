@@ -89,6 +89,9 @@ describe("sending messages", () => {
 
   it("a new message bumps the conversation and counts as read for the sender", async () => {
     const { buyer, seller, convId } = await setup();
+    // In one test transaction now() never moves, so give the buyer's first message a real gap.
+    await sql("UPDATE app.messages SET created_at = now() - interval '1 minute' WHERE conversation_id = $1", [convId]);
+    await sql("UPDATE app.conversation_reads SET last_read_at = now() - interval '1 minute' WHERE conversation_id = $1", [convId]);
     await as(seller);
     await send(convId, seller.id, "Yes, still here");
     await asOwner();
