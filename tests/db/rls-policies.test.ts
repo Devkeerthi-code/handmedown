@@ -140,6 +140,14 @@ describe("private tables", () => {
     const events = (await sql<{ event: string }>("SELECT event::text FROM app.usage_events WHERE user_id = $1", [seller.id])).map((e) => e.event);
     expect(events).toEqual(expect.arrayContaining(["signup", "verified", "listing_created"]));
   });
+
+  it("demo accounts are flagged and uncounted even though Auth writes app_metadata after the insert", async () => {
+    const demo = await createUser();
+    await sql(`UPDATE auth.users SET raw_app_meta_data = raw_app_meta_data || '{"hmd_demo": true}' WHERE id = $1`, [demo.id]);
+    const [p] = await sql<{ is_demo: boolean }>("SELECT is_demo FROM app.profiles WHERE id = $1", [demo.id]);
+    expect(p.is_demo).toBe(true);
+    expect(await sql("SELECT 1 FROM app.usage_events WHERE user_id = $1", [demo.id])).toHaveLength(0);
+  });
 });
 
 describe("storage bucket", () => {
