@@ -2,7 +2,7 @@
 // The only way in is through this app's server, and every user-facing query
 // still runs under Row Level Security (see src/lib/db/rls.ts).
 // Search vectors, RLS policies, triggers and storage/realtime policies are in
-// the raw SQL migration 0002_security_and_search.
+// the raw SQL migrations 0002_security_and_search and 0003_multi_college.
 
 generator client {
   provider = "prisma-client"
@@ -70,6 +70,27 @@ enum ReportStatus {
   @@schema("app")
 }
 
+enum CollegeStatus {
+  active
+  suspended
+
+  @@schema("app")
+}
+
+enum DomainStatus {
+  active
+  pending
+
+  @@schema("app")
+}
+
+enum CollegeRole {
+  admin
+  moderator
+
+  @@schema("app")
+}
+
 enum UsageEventType {
   signup
   verified
@@ -79,7 +100,67 @@ enum UsageEventType {
   message_sent
   alert_created
   report_filed
+  college_created
 
+  @@schema("app")
+}
+
+/// One tenant. Every listing, chat, report and alert belongs to exactly one college.
+model College {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String        @db.VarChar(80)
+  shortName   String        @map("short_name") @db.VarChar(12)
+  slug        String        @unique @db.VarChar(40)
+  logoPath    String?       @map("logo_path") @db.VarChar(200)
+  accent      String        @db.VarChar(7)
+  pickupSpots String[]      @map("pickup_spots") @db.VarChar(60)
+  categories  Category[]
+  status      CollegeStatus @default(active)
+  isDemo      Boolean       @default(false) @map("is_demo")
+  createdBy   String?       @map("created_by") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  creator       Profile?                @relation("collegeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  domains       CollegeDomain[]
+  members       Profile[]               @relation("membership")
+  roles         CollegeRoleAssignment[]
+  listings      Listing[]
+  conversations Conversation[]
+  reports       Report[]
+  alerts        WishlistAlert[]
+
+  @@map("colleges")
+  @@schema("app")
+}
+
+/// Email domains that make someone a member of a college. Extra domains start pending until a platform admin approves.
+model CollegeDomain {
+  domain      String       @id @db.VarChar(253)
+  collegeId   String       @map("college_id") @db.Uuid
+  status      DomainStatus @default(pending)
+  requestedBy String?      @map("requested_by") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+
+  @@index([collegeId])
+  @@map("college_domains")
+  @@schema("app")
+}
+
+model CollegeRoleAssignment {
+  collegeId String      @map("college_id") @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  role      CollegeRole
+  grantedBy String?     @map("granted_by") @db.Uuid
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  user    Profile @relation("roleHolder", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([collegeId, userId])
+  @@index([userId])
+  @@map("college_roles")
   @@schema("app")
 }
 
@@ -87,12 +168,16 @@ enum UsageEventType {
 model Profile {
   id          String    @id @db.Uuid
   displayName String    @map("display_name") @db.VarChar(40)
+  collegeId   String?   @map("college_id") @db.Uuid
   verifiedAt  DateTime? @map("verified_at") @db.Timestamptz(6)
   isAdmin     Boolean   @default(false) @map("is_admin")
   isDemo      Boolean   @default(false) @map("is_demo")
   bannedAt    DateTime? @map("banned_at") @db.Timestamptz(6)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  college           College?                @relation("membership", fields: [collegeId], references: [id], onDelete: SetNull)
+  collegesCreated   College[]               @relation("collegeCreator")
+  collegeRoles      CollegeRoleAssignment[] @relation("roleHolder")
   listings          Listing[]
   buyerChats        Conversation[]     @relation("buyer")
   sellerChats       Conversation[]     @relation("seller")
@@ -106,21 +191,15 @@ model Profile {
   alerts            WishlistAlert[]
   pushSubscriptions PushSubscription[]
 
+  @@index([collegeId])
   @@map("profiles")
-  @@schema("app")
-}
-
-/// College email domains that earn the verified badge (synced from COLLEGE_EMAIL_DOMAINS).
-model AllowedDomain {
-  domain String @id @db.VarChar(253)
-
-  @@map("allowed_domains")
   @@schema("app")
 }
 
 model Listing {
   id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sellerId      String        @map("seller_id") @db.Uuid
+  collegeId     String        @map("college_id") @db.Uuid
   title         String        @db.VarChar(80)
   description   String        @default("") @db.VarChar(1000)
   category      Category
@@ -141,11 +220,13 @@ model Listing {
   updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   seller        Profile          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  college       College          @relation(fields: [collegeId], references: [id], onDelete: Cascade)
   photos        ListingPhoto[]
   conversations Conversation[]
   reports       Report[]
   deliveries    AlertDelivery[]
 
+  @@unique([id, collegeId])
   @@index([sellerId, createdAt(sort: Desc)])
   @@map("listings")
   @@schema("app")
@@ -171,12 +252,14 @@ model ListingPhoto {
 model Conversation {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   listingId     String   @map("listing_id") @db.Uuid
+  collegeId     String   @map("college_id") @db.Uuid
   buyerId       String   @map("buyer_id") @db.Uuid
   sellerId      String   @map("seller_id") @db.Uuid
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   lastMessageAt DateTime @default(now()) @map("last_message_at") @db.Timestamptz(6)
 
-  listing  Listing            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing  Listing            @relation(fields: [listingId, collegeId], references: [id, collegeId], onDelete: Cascade)
+  college  College            @relation(fields: [collegeId], references: [id], onDelete: Cascade)
   buyer    Profile            @relation("buyer", fields: [buyerId], references: [id], onDelete: Cascade)
   seller   Profile            @relation("seller", fields: [sellerId], references: [id], onDelete: Cascade)
   messages Message[]
@@ -185,6 +268,7 @@ model Conversation {
   @@unique([listingId, buyerId])
   @@index([buyerId, lastMessageAt(sort: Desc)])
   @@index([sellerId, lastMessageAt(sort: Desc)])
+  @@index([collegeId])
   @@map("conversations")
   @@schema("app")
 }
@@ -235,6 +319,7 @@ model Block {
 model Report {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   reporterId     String       @map("reporter_id") @db.Uuid
+  collegeId      String       @map("college_id") @db.Uuid
   listingId      String?      @map("listing_id") @db.Uuid
   reportedUserId String?      @map("reported_user_id") @db.Uuid
   reason         ReportReason
@@ -245,11 +330,12 @@ model Report {
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
 
   reporter     Profile  @relation("reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  listing      Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing      Listing? @relation(fields: [listingId, collegeId], references: [id, collegeId], onDelete: Cascade)
+  college      College  @relation(fields: [collegeId], references: [id], onDelete: Cascade)
   reportedUser Profile? @relation("reportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
   resolver     Profile? @relation("resolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
 
-  @@index([status, createdAt(sort: Desc)])
+  @@index([collegeId, status, createdAt(sort: Desc)])
   @@map("reports")
   @@schema("app")
 }
@@ -257,6 +343,7 @@ model Report {
 model WishlistAlert {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String    @map("user_id") @db.Uuid
+  collegeId String    @map("college_id") @db.Uuid
   query     String?   @db.VarChar(60)
   category  Category?
   maxPrice  Int?      @map("max_price")
@@ -265,10 +352,11 @@ model WishlistAlert {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   user       Profile         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  college    College         @relation(fields: [collegeId], references: [id], onDelete: Cascade)
   deliveries AlertDelivery[]
 
   @@index([userId])
-  @@index([active, category])
+  @@index([collegeId, active, category])
   @@map("wishlist_alerts")
   @@schema("app")
 }
