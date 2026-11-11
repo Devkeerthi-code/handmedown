@@ -126,6 +126,7 @@ export function ThreadView({ thread, meId, base }: { thread: Thread; meId: strin
     const result = await sendMessage(thread.id, body);
     if (result.ok) {
       setMessages((prev) => mergeById(prev.filter((m) => m.id !== tempId), [result.data]));
+      router.refresh(); // the inbox beside the thread is server-rendered
     } else {
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, pending: false, failed: true } : m)));
       toast(result.error, undefined, { type: "error" });
