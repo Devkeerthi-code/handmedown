@@ -38,6 +38,7 @@ export function formatBytes(bytes: number) {
 }
 
 export function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+  // Only words that start with a letter, so "Karthik S. (demo)" gives "KS", not "K(".
+  const parts = name.trim().split(/\s+/).filter((w) => /^\p{L}/u.test(w));
   return ((parts[0]?.[0] ?? "?") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 }

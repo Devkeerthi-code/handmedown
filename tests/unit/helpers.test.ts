@@ -56,6 +56,9 @@ describe("format", () => {
   it("makes initials", () => {
     expect(initials("Ananya Rao")).toBe("AR");
     expect(initials("karthik")).toBe("K");
+    expect(initials("Karthik S. (demo)")).toBe("KS");
+    expect(initials("Meera J. 2nd")).toBe("MJ");
+    expect(initials("  ")).toBe("?");
   });
 });
 
